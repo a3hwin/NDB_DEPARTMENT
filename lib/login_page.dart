@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import './baseUrl.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Add this
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,43 +16,168 @@ class _LoginPageState extends State<LoginPage> {
   final _mobileController = TextEditingController();
   final _otpController = TextEditingController();
   bool _isLoading = false;
-  bool _showResend = false;
+  bool _otpSent = false;
+  String? _errorMessage;
+  int? _depUserId;
+  final _storage = const FlutterSecureStorage(); // Create storage instance
 
-  @override
-  void initState() {
-    super.initState();
-    _mobileController.addListener(_checkInput);
-    _otpController.addListener(_checkInput);
-  }
-
-  void _checkInput() {
+  // Send OTP to mobile number
+  Future<void> _sendOTP() async {
     setState(() {
-      _showResend = _mobileController.text.isNotEmpty;
+      _isLoading = true;
+      _errorMessage = null;
+      _depUserId = null;
     });
+
+    final mobile = _mobileController.text.trim();
+    if (mobile.isEmpty || mobile.length != 10) {
+      setState(() {
+        _errorMessage = 'Please enter a valid 10-digit mobile number';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      final map = <String, String>{};
+      map['depMobile'] = mobile;
+      final url = Uri.parse('$baseUrl/api/app/login-department-app-user');
+
+      final response = await http.post(url, body: map);
+
+      print('Send OTP API Response: ${response.statusCode} - ${response.body}');
+
+      final responseData = json.decode(response.body);
+      if (response.statusCode == 200) {
+        if (responseData['errFlag'] == 1) {
+          setState(() {
+            _errorMessage = responseData['message'];
+            _isLoading = false;
+          });
+          return;
+        }
+
+        setState(() {
+          _otpSent = true;
+          _depUserId = responseData['depUserId'];
+        });
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('OTP sent successfully!')));
+      } else {
+        setState(() {
+          _errorMessage =
+              'Failed to send OTP: ${responseData['message'] ?? response.body}';
+        });
+      }
+    } catch (e) {
+      print('Error: $e');
+      setState(() {
+        _errorMessage = 'Network error: $e';
+      });
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
-  void _handleLogin() {
+  // Verify OTP and store user data
+  Future<void> _verifyOTP() async {
+    final otp = _otpController.text.trim();
+    if (otp.isEmpty || otp.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid 6-digit OTP')),
+      );
+      return;
+    }
+
+    if (_depUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error: Missing user ID. Please request a new OTP'),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
-    if (_mobileController.text.isNotEmpty && _otpController.text == '1234') {
+
+    try {
+      final map = <String, String>{};
+      map['otp'] = otp;
+      map['depMobile'] = _mobileController.text.trim();
+      map['depUserId'] = _depUserId.toString();
+
+      final url = Uri.parse('$baseUrl/api/app/department/verify-otp');
+
+      final response = await http.post(url, body: map);
+      print(
+        'Verify OTP API Response: ${response.statusCode} - ${response.body}',
+      );
+
+      final responseData = json.decode(response.body);
+      if (response.statusCode == 200) {
+        if (responseData['errFlag'] == 0) {
+          // Extract token from response (adjust key as per your API)
+          final token = responseData['token'] ?? '';
+
+          // Store user data in secure storage
+          await _storeUserData(
+            phone: _mobileController.text.trim(),
+            depUserId: _depUserId!,
+            token: token,
+          );
+
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Login Successful!')));
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardPage()),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'OTP verification failed: ${responseData['message']}',
+              ),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Server error: ${response.body}')),
+        );
+      }
+    } catch (e) {
+      print('Error: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Login Successful!')));
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardPage()),
-      );
-      Future.delayed(const Duration(seconds: 1), () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const DashboardPage()),
-        );
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid mobile number or OTP')),
-      );
+      ).showSnackBar(SnackBar(content: Text('Network error: $e')));
+    } finally {
+      setState(() => _isLoading = false);
     }
-    setState(() => _isLoading = false);
+  }
+
+  // Store user data in secure storage
+  Future<void> _storeUserData({
+    required String phone,
+    required int depUserId,
+    required String token,
+  }) async {
+    try {
+      await _storage.write(key: 'userPhone', value: phone);
+      await _storage.write(key: 'depUserId', value: depUserId.toString());
+      await _storage.write(key: 'authToken', value: token);
+
+      print('User data stored securely:');
+      print('Phone: $phone');
+      print('depUserId: $depUserId');
+      print('Token: $token');
+    } catch (e) {
+      print('Error storing user data: $e');
+      // Handle storage error if needed
+    }
   }
 
   @override
@@ -161,8 +290,10 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                             const SizedBox(height: 30),
+
+                            // Mobile Number Input
                             const Text(
-                              'Email ID',
+                              'Mobile Number',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF030100),
@@ -174,74 +305,56 @@ class _LoginPageState extends State<LoginPage> {
                             const SizedBox(height: 8),
                             TextField(
                               controller: _mobileController,
-                              decoration: const InputDecoration(
-                                hintText: 'Enter your email address',
-                                hintStyle: TextStyle(
+                              decoration: InputDecoration(
+                                hintText: 'Enter your 10-digit mobile number',
+                                hintStyle: const TextStyle(
                                   color: Color(0xFFC4C2C0),
                                   fontSize: 16,
                                   fontFamily: 'Inter Display',
                                   fontWeight: FontWeight.w400,
                                   height: 1.50,
                                 ),
-                                border: OutlineInputBorder(),
+                                border: const OutlineInputBorder(),
+                                errorText: _errorMessage,
                               ),
-                              keyboardType: TextInputType.emailAddress,
+                              keyboardType: TextInputType.phone,
+                              maxLength: 10,
+                              enabled: !_otpSent,
                             ),
                             const SizedBox(height: 20),
-                            const Text(
-                              'Password',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF030100),
-                                fontFamily: 'Inter Display',
-                                fontWeight: FontWeight.w400,
-                                height: 1.57,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                TextField(
-                                  controller: _otpController,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Enter OTP received',
-                                    hintStyle: TextStyle(
-                                      color: Color(0xFFC4C2C0),
-                                      fontSize: 16,
-                                      fontFamily: 'Inter Display',
-                                      fontWeight: FontWeight.w400,
-                                      height: 1.50,
-                                    ),
-                                    border: OutlineInputBorder(),
-                                  ),
+
+                            // OTP Input (shown after OTP is sent)
+                            if (_otpSent) ...[
+                              const Text(
+                                'OTP (6 digits)',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF030100),
+                                  fontFamily: 'Inter Display',
+                                  fontWeight: FontWeight.w400,
+                                  height: 1.57,
                                 ),
-                                if (_showResend)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        TextButton(
-                                          onPressed: () {
-                                            // Add reset password logic here
-                                          },
-                                          child: const Text(
-                                            'Reset Password',
-                                            style: TextStyle(
-                                              color: Color(0xFFF97D09),
-                                              fontSize: 14,
-                                              fontFamily: 'Inter Display',
-                                              fontWeight: FontWeight.w400,
-                                              height: 1.43,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: _otpController,
+                                decoration: const InputDecoration(
+                                  hintText: 'Enter 6-digit OTP received',
+                                  hintStyle: TextStyle(
+                                    color: Color(0xFFC4C2C0),
+                                    fontSize: 16,
+                                    fontFamily: 'Inter Display',
+                                    fontWeight: FontWeight.w400,
+                                    height: 1.50,
                                   ),
-                              ],
-                            ),
+                                  border: OutlineInputBorder(),
+                                ),
+                                keyboardType: TextInputType.number,
+                                maxLength: 6,
+                              ),
+                              const SizedBox(height: 20),
+                            ],
+
                             const SizedBox(height: 22),
                             const SizedBox(height: 20),
                             const SizedBox(height: 134),
@@ -264,15 +377,14 @@ class _LoginPageState extends State<LoginPage> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed:
-                          (_mobileController.text.isNotEmpty &&
-                                  _otpController.text.isNotEmpty &&
-                                  !_isLoading)
-                              ? _handleLogin
-                              : null,
+                          _isLoading
+                              ? null
+                              : _otpSent
+                              ? _verifyOTP
+                              : _sendOTP,
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
-                            _mobileController.text.isNotEmpty &&
-                                    _otpController.text.isNotEmpty
+                            _mobileController.text.isNotEmpty
                                 ? const Color(0xFFFB8B3B)
                                 : const Color(0xFFE1E0DF),
                         disabledBackgroundColor: const Color(0xFFD3D3D3),
@@ -283,17 +395,17 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       child:
                           _isLoading
-                              ? CircularProgressIndicator(color: Colors.white)
+                              ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
                               : Text(
-                                'Login',
+                                _otpSent ? 'Verify OTP' : 'Send OTP',
                                 style: TextStyle(
                                   fontSize: 16,
                                   color:
-                                      (_mobileController.text.isNotEmpty &&
-                                              _otpController.text.isNotEmpty &&
-                                              !_isLoading)
+                                      _mobileController.text.isNotEmpty
                                           ? Colors.white
-                                          : Color(0xFF8C8885),
+                                          : const Color(0xFF8C8885),
                                   fontFamily: 'Inter Display',
                                   fontWeight: FontWeight.w600,
                                   height: 1.50,

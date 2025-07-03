@@ -69,7 +69,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                       'Your password must be at least 6 characters and should include a combination of numbers, letters and special characters (!@\$%)',
                       style: TextStyle(
                         color: const Color(0xFF8C8885),
-                        fontSize: 16,
+                        fontSize: 15,
                         fontFamily: 'Inter Display',
                         fontWeight: FontWeight.w400,
                         height: 1.50,

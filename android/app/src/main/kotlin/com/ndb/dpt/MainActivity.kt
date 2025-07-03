@@ -1,4 +1,4 @@
-package com.example.nava_app_dept
+package com.ndb.dpt
 
 import io.flutter.embedding.android.FlutterActivity
 

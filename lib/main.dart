@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'login_page.dart';
+import 'home_page.dart'; // Ensure this import matches your DashboardPage location
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import './baseUrl.dart'; // Adjust path if necessary
 
 void main() {
   runApp(const MyApp());
@@ -32,6 +36,7 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
+  final _storage = const FlutterSecureStorage();
 
   @override
   void initState() {
@@ -42,12 +47,46 @@ class _SplashScreenState extends State<SplashScreen>
     );
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
-    Timer(const Duration(seconds: 3), () {
+    _checkTokenAndNavigate();
+  }
+
+  Future<void> _checkTokenAndNavigate() async {
+    final minSplashFuture = Future.delayed(const Duration(seconds: 2));
+
+    final token = await _storage.read(key: 'authToken');
+
+    if (token == null || token.isEmpty) {
+      await minSplashFuture;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const LoginPage()),
       );
-    });
+    } else {
+      final isValid = await _verifyToken(token);
+      await minSplashFuture; // Ensure minimum splash time
+      if (isValid) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardPage()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      }
+    }
+  }
+
+  Future<bool> _verifyToken(String token) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/app/department/verify-token/$token');
+      final response = await http.get(url);
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error verifying token: $e');
+      return false;
+    }
   }
 
   @override
@@ -69,7 +108,6 @@ class _SplashScreenState extends State<SplashScreen>
                     height: screenWidth * 0.3,
                     decoration: BoxDecoration(
                       color: Colors.white, // White background
-
                       boxShadow: [
                         BoxShadow(
                           color: Color(0x19000000),

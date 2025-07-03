@@ -4,6 +4,7 @@ import 'bottomNavBar.dart';
 import 'home_page.dart';
 import 'notif.dart';
 import 'profile.dart';
+import 'update_page.dart'; // Add this import for UpdatePage
 
 // Define DropdownData class for type safety
 class DropdownData {
@@ -186,6 +187,7 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
         ],
       ),
       child: Stack(
+        clipBehavior: Clip.none,
         children: [
           Positioned(
             left: 16,
@@ -274,14 +276,41 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
           Positioned(
             left: 16,
             top: 118,
-            child: Container(
-              width: 303,
+            child: Text(
+              data['timestamp']!,
+              style: const TextStyle(
+                color: Color(0xFF8C8885),
+                fontSize: 12,
+                fontFamily: 'Inter Display',
+                fontWeight: FontWeight.w400,
+                height: 1.67,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 240,
+            bottom: 16,
+            right: 30,
+            child: InkWell(
+              onTap: () {
+                if (data['title'] == 'Pothole on MG Road') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => UpdatePage(data: data),
+                    ),
+                  );
+                } else {
+                  print('View Details pressed for ${data['title']}');
+                }
+              },
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text(
-                    data['timestamp']!,
-                    style: const TextStyle(
+                  const Text(
+                    'View Details',
+                    style: TextStyle(
                       color: Color(0xFF8C8885),
                       fontSize: 12,
                       fontFamily: 'Inter Display',
@@ -289,29 +318,11 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
                       height: 1.67,
                     ),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      if (data['title'] == 'Pothole on MG Road') {
-                      } else {
-                        print('View Details pressed for ${data['title']}');
-                      }
-                    },
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      alignment: Alignment.centerRight,
-                    ),
-                    child: const Text(
-                      'View Details >',
-                      style: TextStyle(
-                        color: Color(0xFF8C8885),
-                        fontSize: 12,
-                        fontFamily: 'Inter Display',
-                        fontWeight: FontWeight.w400,
-                        height: 1.67,
-                      ),
-                    ),
+                  const SizedBox(width: 8),
+                  SvgPicture.asset(
+                    'assets/images/arrow_right.svg',
+                    width: 12,
+                    height: 12,
                   ),
                 ],
               ),
@@ -397,20 +408,35 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
 
   // Build dropdown buttons widget
   Widget buildDropdownButtons(List<DropdownData> dropdowns) {
+    const dropdownTextStyle = TextStyle(
+      color: Color(0xFF030100),
+      fontSize: 14,
+      fontFamily: 'Inter Display',
+      fontWeight: FontWeight.w400,
+      height: 1.57,
+    );
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children:
               dropdowns.map((DropdownData dropdown) {
+                String? selectedValue;
+                if (dropdown.label == 'Status') {
+                  selectedValue = selectedStatus;
+                } else if (dropdown.label == 'Category') {
+                  selectedValue = selectedCategory;
+                } else if (dropdown.label == 'Area') {
+                  selectedValue = selectedArea;
+                } else if (dropdown.label == 'Date') {
+                  selectedValue = selectedDate;
+                }
+
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
                     decoration: ShapeDecoration(
                       shape: RoundedRectangleBorder(
                         side: const BorderSide(
@@ -420,53 +446,54 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: DropdownButton<String>(
-                      value:
-                          dropdown.label == 'Status'
-                              ? selectedStatus
-                              : dropdown.label == 'Category'
-                              ? selectedCategory
-                              : dropdown.label == 'Area'
-                              ? selectedArea
-                              : selectedDate,
-                      hint: Text(
-                        dropdown.label,
-                        style: const TextStyle(
-                          color: Color(0xFF030100),
-                          fontSize: 14,
-                          fontFamily: 'Inter Display',
-                          fontWeight: FontWeight.w400,
-                          height: 1.57,
+                    child: PopupMenuButton<String>(
+                      constraints: const BoxConstraints.tightFor(
+                        width: null, // Let content determine width
+                      ),
+                      offset: const Offset(0, 40), // Below button
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: const BorderSide(color: Color(0xFFA8A5A2)),
+                      ),
+                      color: Colors.white.withOpacity(0.95),
+                      elevation: 2,
+                      itemBuilder:
+                          (context) =>
+                              dropdown.options.map((String value) {
+                                return PopupMenuItem<String>(
+                                  value: value,
+                                  height: 48,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  child: Text(value, style: dropdownTextStyle),
+                                );
+                              }).toList(),
+                      onSelected: (value) {
+                        onDropdownChanged(dropdown.label, value);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              selectedValue ?? dropdown.label,
+                              style: dropdownTextStyle,
+                            ),
+                            const SizedBox(width: 8),
+                            SvgPicture.asset(
+                              'assets/images/arrow_down.svg',
+                              width: 12,
+                              height: 6.89,
+                            ),
+                          ],
                         ),
                       ),
-                      icon: const Icon(
-                        Icons.arrow_drop_down,
-                        color: Color(0xFF8C8885),
-                      ),
-                      underline: const SizedBox(),
-                      isDense: true,
-                      items:
-                          dropdown.options.map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(
-                                value,
-                                style: const TextStyle(
-                                  color: Color(0xFF030100),
-                                  fontSize: 14,
-                                  fontFamily: 'Inter Display',
-                                  fontWeight: FontWeight.w400,
-                                  height: 1.67,
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                      onChanged: (value) {
-                        onDropdownChanged(
-                          dropdown.label,
-                          value == 'All' ? null : value,
-                        );
-                      },
                     ),
                   ),
                 );

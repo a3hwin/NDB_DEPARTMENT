@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'bottomNavBar.dart';
 import 'home_page.dart';
 import 'grievancesPage.dart';
 import 'notif.dart';
-import 'edit.dart'; // Add this import for the new screen
+import 'edit.dart';
+import 'login_page.dart'; // Add this import for the LoginPage
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -17,6 +19,27 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isGetInTouchExpanded = false;
   bool _isCallUsExpanded = false;
   bool _isSupportEmailExpanded = false;
+  final _storage = const FlutterSecureStorage(); // Initialize secure storage
+
+  // Logout function
+  Future<void> _logout() async {
+    try {
+      // Delete authentication token and other user data
+      await _storage.delete(key: 'authToken');
+      await _storage.delete(key: 'userPhone'); // Optional
+      await _storage.delete(key: 'depUserId'); // Optional
+    } catch (e) {
+      print('Error deleting from secure storage: $e');
+      // Proceed to login page even if deletion fails
+    }
+
+    // Navigate to LoginPage and remove all previous routes
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginPage()),
+      (Route<dynamic> route) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +138,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       buildSupportEmailSection(),
                     ],
                     buildNonExpandableOption('Logout', 'Sign out securely', () {
-                      // Handle logout action
+                      _logout(); // Call logout function
                     }),
                   ],
                 ),
@@ -293,7 +316,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 Row(
                   children: [
                     SvgPicture.asset(
-                      'assets/images/phone.svg',
+                      'assets/images/phoneg.svg',
                       width: 20,
                       height: 20,
                     ),
