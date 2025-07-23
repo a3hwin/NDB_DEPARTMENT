@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "233939756135",
+    "project_id": "ndb-app-c34f1",
+    "storage_bucket": "ndb-app-c34f1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:233939756135:android:9a009fca59b0f382d820c2",
+        "android_client_info": {
+          "package_name": "com.ndb.dpt"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDchUhZHLzZ_XejldlvrG0o9s3ToLob2wA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

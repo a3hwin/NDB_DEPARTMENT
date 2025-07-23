@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'change_password.dart';
 import 'profile.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -11,31 +13,38 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  final _nameController = TextEditingController(text: 'RIHAN');
+  final _departmentNameController = TextEditingController(text: 'RIHAN');
+  final _departmentCodeController = TextEditingController(text: '');
+  final _headOfDepartmentController = TextEditingController(text: '');
   final _emailController = TextEditingController(text: 'rihan@gmail.com');
   final _phoneController = TextEditingController(text: '9876543120');
-  final _nameFocusNode = FocusNode();
+  final _wardNumberController = TextEditingController(text: '');
+  final _headOfDepartmentFocusNode = FocusNode();
   final _emailFocusNode = FocusNode();
   final _phoneFocusNode = FocusNode();
-  bool _isNameEditable = false;
+  bool _isHeadOfDepartmentEditable = false;
   bool _isEmailEditable = false;
   bool _isPhoneEditable = false;
-  String _selectedRole = 'Officer'; // Default dropdown value
   bool _isScrolled = false;
   final ScrollController _scrollController = ScrollController();
+  final _storage = const FlutterSecureStorage();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _fetchDepartmentDetails();
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _departmentNameController.dispose();
+    _departmentCodeController.dispose();
+    _headOfDepartmentController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _nameFocusNode.dispose();
+    _wardNumberController.dispose();
+    _headOfDepartmentFocusNode.dispose();
     _emailFocusNode.dispose();
     _phoneFocusNode.dispose();
     _scrollController.removeListener(_onScroll);
@@ -47,6 +56,43 @@ class _EditProfilePageState extends State<EditProfilePage> {
     setState(() {
       _isScrolled = _scrollController.offset > 0;
     });
+  }
+
+  Future<void> _fetchDepartmentDetails() async {
+    final String? token = await _storage.read(key: 'authToken');
+    if (token == null) return;
+
+    final url = Uri.parse(
+      'https://ndb-apis-69em6.ondigitalocean.app/api/app/department/get-department-details/$token',
+    );
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['errFlag'] == 0) {
+          final Map<String, dynamic> department = jsonResponse['data'];
+          setState(() {
+            _departmentNameController.text =
+                department['departmentName'] ?? 'RIHAN';
+            _departmentCodeController.text = department['departmentCode'] ?? '';
+            _headOfDepartmentController.text =
+                department['headOfDepartment'] ?? '';
+            _emailController.text =
+                department['departmentEmail'] ?? 'rihan@gmail.com';
+            _phoneController.text =
+                department['departmentMobile'] ?? '9876543120';
+            _wardNumberController.text = department['wardNumbers'] ?? '';
+          });
+        }
+      } else {
+        print(
+          'API Error: Status Code ${response.statusCode}, Body: ${response.body}',
+        );
+      }
+    } catch (e) {
+      print('API Fetch Error: $e');
+      // Retain hardcoded values on failure
+    }
   }
 
   @override
@@ -63,15 +109,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          SafeArea(
+          RefreshIndicator(
+            onRefresh: _fetchDepartmentDetails,
             child: CustomScrollView(
               controller: _scrollController,
               slivers: [
-                // Custom SliverAppBar implementation
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _EditProfileSliverAppBarDelegate(
-                    expandedHeight: 150, // Adjusted for title and subtitle
+                    expandedHeight: 150,
                     isScrolled: _isScrolled,
                     onBackPressed: () {
                       Navigator.pushReplacement(
@@ -83,105 +129,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     },
                   ),
                 ),
-                // 24px spacing between app bar and first input field
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                // Form content
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // IP-1: Name
                         const Text(
-                          'Name',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF030100),
-                            fontFamily: 'Inter Display',
-                            fontWeight: FontWeight.w400,
-                            height: 1.57,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _nameController,
-                          focusNode: _nameFocusNode,
-                          readOnly: !_isNameEditable,
-                          style: textFieldStyle,
-                          onTap: () {
-                            if (_isNameEditable) {
-                              _nameFocusNode.requestFocus();
-                            }
-                          },
-                          textInputAction: TextInputAction.next,
-                          onChanged: (value) {
-                            if (_isNameEditable) {
-                              setState(() {});
-                            }
-                          },
-                          decoration: InputDecoration(
-                            hintText: 'Enter your name',
-                            hintStyle: const TextStyle(
-                              color: Color(0xFFC4C2C0),
-                              fontSize: 16,
-                              fontFamily: 'Inter Display',
-                              fontWeight: FontWeight.w400,
-                              height: 1.50,
-                            ),
-                            filled: true,
-                            fillColor:
-                                _isNameEditable ? Colors.white : Colors.white,
-                            border: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color:
-                                    _isNameEditable
-                                        ? const Color(0xFFD96C07)
-                                        : const Color(0xFFE1E0DF),
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color:
-                                    _isNameEditable
-                                        ? const Color(0xFFD96C07)
-                                        : const Color(0xFFE1E0DF),
-                              ),
-                            ),
-                            focusedBorder: const OutlineInputBorder(
-                              borderSide: BorderSide(color: Color(0xFFD96C07)),
-                            ),
-                            suffixIcon: Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _isNameEditable = !_isNameEditable;
-                                    if (_isNameEditable) {
-                                      _nameFocusNode.requestFocus();
-                                    } else {
-                                      _nameFocusNode.unfocus();
-                                    }
-                                  });
-                                },
-                                child: Text(
-                                  'EDIT',
-                                  style: TextStyle(
-                                    color: const Color(0xFFD96C07),
-                                    fontSize: 12,
-                                    fontFamily: 'Inter Display',
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.67,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16), // 16px spacing
-                        // IP-2: Employee ID (Non-editable)
-                        const Text(
-                          'Employee ID',
+                          'Department Name',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -202,12 +158,131 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             borderRadius: BorderRadius.circular(4),
                             color: Colors.white,
                           ),
-                          child: Text('EMP-7845', style: textFieldStyle),
+                          child: Text(
+                            _departmentNameController.text,
+                            style: textFieldStyle,
+                          ),
                         ),
-                        const SizedBox(height: 16), // 16px spacing
-                        // IP-3: Email
+                        const SizedBox(height: 16),
                         const Text(
-                          'Email Adress',
+                          'Department Code',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF030100),
+                            fontFamily: 'Inter Display',
+                            fontWeight: FontWeight.w400,
+                            height: 1.57,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 16,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: const Color(0xFFE1E0DF)),
+                            borderRadius: BorderRadius.circular(4),
+                            color: Colors.white,
+                          ),
+                          child: Text(
+                            _departmentCodeController.text,
+                            style: textFieldStyle,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Head Of Department',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF030100),
+                            fontFamily: 'Inter Display',
+                            fontWeight: FontWeight.w400,
+                            height: 1.57,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _headOfDepartmentController,
+                          focusNode: _headOfDepartmentFocusNode,
+                          readOnly: !_isHeadOfDepartmentEditable,
+                          style: textFieldStyle,
+                          onTap: () {
+                            if (_isHeadOfDepartmentEditable) {
+                              _headOfDepartmentFocusNode.requestFocus();
+                            }
+                          },
+                          textInputAction: TextInputAction.next,
+                          onChanged: (value) {
+                            if (_isHeadOfDepartmentEditable) {
+                              setState(() {});
+                            }
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'Enter head of department',
+                            hintStyle: const TextStyle(
+                              color: Color(0xFFC4C2C0),
+                              fontSize: 16,
+                              fontFamily: 'Inter Display',
+                              fontWeight: FontWeight.w400,
+                              height: 1.50,
+                            ),
+                            filled: true,
+                            fillColor:
+                                _isHeadOfDepartmentEditable
+                                    ? Colors.white
+                                    : Colors.white,
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color:
+                                    _isHeadOfDepartmentEditable
+                                        ? const Color(0xFFD96C07)
+                                        : const Color(0xFFE1E0DF),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color:
+                                    _isHeadOfDepartmentEditable
+                                        ? const Color(0xFFD96C07)
+                                        : const Color(0xFFE1E0DF),
+                              ),
+                            ),
+                            focusedBorder: const OutlineInputBorder(
+                              borderSide: BorderSide(color: Color(0xFFD96C07)),
+                            ),
+                            suffixIcon: Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isHeadOfDepartmentEditable =
+                                        !_isHeadOfDepartmentEditable;
+                                    if (_isHeadOfDepartmentEditable) {
+                                      _headOfDepartmentFocusNode.requestFocus();
+                                    } else {
+                                      _headOfDepartmentFocusNode.unfocus();
+                                    }
+                                  });
+                                },
+                                child: Text(
+                                  'EDIT',
+                                  style: TextStyle(
+                                    color: const Color(0xFFD96C07),
+                                    fontSize: 12,
+                                    fontFamily: 'Inter Display',
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.67,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Email Address',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -292,10 +367,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           ),
                           keyboardType: TextInputType.emailAddress,
                         ),
-                        const SizedBox(height: 16), // 16px spacing
-                        // IP-4: Phone
+                        const SizedBox(height: 16),
                         const Text(
-                          'Phone Number',
+                          'Mobile Number',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -380,57 +454,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           ),
                           keyboardType: TextInputType.phone,
                         ),
-                        const SizedBox(height: 16), // 16px spacing
-                        // IP-5: Designation (Dropdown)
+                        const SizedBox(height: 16),
                         const Text(
-                          'Designation',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF030100),
-                            fontFamily: 'Inter Display',
-                            fontWeight: FontWeight.w400,
-                            height: 1.57,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        DropdownButtonFormField<String>(
-                          value: _selectedRole,
-                          decoration: InputDecoration(
-                            border: const OutlineInputBorder(
-                              borderSide: BorderSide(color: Color(0xFFE1E0DF)),
-                            ),
-                            enabledBorder: const OutlineInputBorder(
-                              borderSide: BorderSide(color: Color(0xFFE1E0DF)),
-                            ),
-                            focusedBorder: const OutlineInputBorder(
-                              borderSide: BorderSide(color: Color(0xFFD96C07)),
-                            ),
-                          ),
-                          icon: Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: SvgPicture.asset(
-                              'assets/images/arrow_down.svg',
-                              width: 10.4,
-                              height: 6,
-                            ),
-                          ),
-                          items:
-                              ['Officer', 'Admin'].map((String role) {
-                                return DropdownMenuItem<String>(
-                                  value: role,
-                                  child: Text(role, style: textFieldStyle),
-                                );
-                              }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              _selectedRole = newValue!;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 16), // 16px spacing
-                        // IP-6: Password (Non-editable)
-                        const Text(
-                          'Password',
+                          'Ward Number',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -451,76 +477,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             borderRadius: BorderRadius.circular(4),
                             color: Colors.white,
                           ),
-                          child: Text('9876543120', style: textFieldStyle),
-                        ),
-                        const SizedBox(height: 16), // 16px spacing
-                        // IP-7: Change Password
-                        const Text(
-                          'Change Password',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF030100),
-                            fontFamily: 'Inter Display',
-                            fontWeight: FontWeight.w400,
-                            height: 1.57,
+                          child: Text(
+                            _wardNumberController.text,
+                            style: textFieldStyle,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => const ChangePasswordPage(),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            width: double.infinity,
-                            height: 52,
-                            decoration: ShapeDecoration(
-                              color: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                side: const BorderSide(
-                                  width: 1,
-                                  color: Color(0xFFE1E0DF),
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Stack(
-                              children: [
-                                const Positioned(
-                                  left: 12,
-                                  top: 14,
-                                  child: Text(
-                                    'Change password',
-                                    style: TextStyle(
-                                      color: Color(0xFF8C8885),
-                                      fontSize: 16,
-                                      fontFamily: 'Inter Display',
-                                      fontWeight: FontWeight.w400,
-                                      height: 1.50,
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  right: 12,
-                                  top: 23,
-                                  child: SvgPicture.asset(
-                                    'assets/images/arrow_right.svg',
-                                    width: 10.4,
-                                    height: 6,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 150,
-                        ), // Extra padding to avoid overlap with sticky button
+                        const SizedBox(height: 150),
                       ],
                     ),
                   ),
@@ -531,12 +493,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                20,
-                0,
-                20,
-                32,
-              ), // 32px from bottom, 20px sides
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
               child: GestureDetector(
                 onTap: () {
                   Navigator.pushReplacement(
@@ -590,7 +547,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 }
 
-// Custom SliverPersistentHeaderDelegate for complex AppBar behavior
 class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   final double expandedHeight;
   final bool isScrolled;
@@ -624,23 +580,18 @@ class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
         1.0 - shrinkOffset / (maxExtent - minExtent);
     final double visibilityPercentage = visibilityFactor.clamp(0.0, 1.0);
 
-    // Calculate the transition values for title
     final double titleFontSize = 16 + (24 - 16) * visibilityPercentage;
-    final double titleLeftPosition = 20; // Fixed 20px from left edge
-    final double titleTopPosition =
-        20 +
-        (72 - 20) * visibilityPercentage; // 72 = position in expanded state
+    final double titleLeftPosition = 20;
+    final double titleTopPosition = 20 + (72 - 20) * visibilityPercentage;
     final FontWeight titleFontWeight =
         visibilityPercentage > 0.5 ? FontWeight.w600 : FontWeight.w500;
 
-    // Whether we're in collapsed state
     final bool isCollapsed = shrinkOffset > 0;
 
     return Container(
       color: Colors.white,
       child: Stack(
         children: [
-          // Top row with back and close icons
           Positioned(
             top: 20,
             left: 20,
@@ -648,7 +599,6 @@ class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Back button
                 GestureDetector(
                   onTap: onBackPressed,
                   child: Container(
@@ -664,7 +614,6 @@ class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                     ),
                   ),
                 ),
-                // Title in collapsed state - positioned to the right of back button
                 AnimatedOpacity(
                   opacity: 1 - visibilityPercentage,
                   duration: const Duration(milliseconds: 300),
@@ -689,7 +638,6 @@ class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                   ),
                 ),
                 const Spacer(),
-                // Close icon
                 GestureDetector(
                   onTap: () {
                     Navigator.pushReplacement(
@@ -715,7 +663,6 @@ class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
               ],
             ),
           ),
-          // Title in expanded state
           Positioned(
             left: titleLeftPosition,
             top: titleTopPosition,
@@ -740,10 +687,9 @@ class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
               ),
             ),
           ),
-          // Subtitle - with consistent 20px left margin
           Positioned(
             left: 20,
-            top: 112, // 72 (title top) + 24 (title height) + 16 (spacing)
+            top: 112,
             child: AnimatedOpacity(
               opacity: visibilityPercentage,
               duration: const Duration(milliseconds: 300),

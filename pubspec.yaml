@@ -30,15 +30,25 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  image_picker: ^1.0.0  # Use the latest version from pub.dev
- 
-
-    
+  image_picker: ^1.0.0
+  url_launcher: ^6.3.0
+  google_maps_flutter: ^2.7.0
+  geocoding: ^3.0.0
+  connectivity_plus: ^5.0.2
+  intl: ^0.18.0
+  http: ^1.2.0
+  flutter_secure_storage: ^9.2.2
   flutter_svg: ^2.1.0
+  shared_preferences: ^2.3.2
+ 
+    
+  
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  firebase_messaging: ^15.1.3
+  firebase_core: ^3.6.0
   
 
 dev_dependencies:
@@ -75,7 +85,8 @@ flutter_launcher_icons:
   ios: true                # Enable iOS icon generation
   image_path: "assets/images/NDPappicon.png"  # Path to your icon
   remove_alpha_ios: true  # Remove transparency for iOS
- 
+  adaptive_icon_foreground: "assets/images/NDPappicon.png"
+  adaptive_icon_background: "#0D6DB5" # Solid background color to fill spaceflutter run
 
   # To add assets to your application, add an assets section, like this:
   # assets:

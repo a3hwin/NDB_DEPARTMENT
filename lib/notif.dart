@@ -4,6 +4,12 @@ import 'bottomNavBar.dart';
 import 'home_page.dart';
 import 'grievancesPage.dart';
 import 'profile.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'update_page.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import './baseUrl.dart';
+import 'package:http/http.dart' as http;
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -15,11 +21,77 @@ class NotificationsPage extends StatefulWidget {
 class _NotificationsPageState extends State<NotificationsPage> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
+  List<Map<String, dynamic>> notifications = [];
+  final _storage = const FlutterSecureStorage();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _loadNotifications();
+  }
+
+  void _onScroll() {
+    setState(() {
+      _isScrolled = _scrollController.offset > 0;
+    });
+  }
+
+  Future<void> _loadNotifications() async {
+    final prefs = await SharedPreferences.getInstance();
+    final storedNotifications = prefs.getStringList('notifications') ?? [];
+    setState(() {
+      notifications =
+          storedNotifications
+              .map((n) => Map<String, dynamic>.from(jsonDecode(n)))
+              .toList();
+    });
+  }
+
+  Future<void> _onNotificationTap(Map<String, dynamic> notification) async {
+    final concernId = int.tryParse(notification['concernId'] ?? '');
+    if (concernId == null) return;
+    final token = await _storage.read(key: 'authToken');
+    if (token == null) return;
+
+    final url = '$baseUrl/api/app/department/display-all-concerns/$token';
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> concerns = jsonDecode(response.body);
+        final concern = concerns.firstWhere(
+          (c) => c['id'] == concernId,
+          orElse: () => null,
+        );
+        if (concern != null && mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) =>
+                      UpdatePage(data: Map<String, dynamic>.from(concern)),
+            ),
+          );
+        } else if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Grievance not found')));
+        }
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to fetch grievances')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error fetching details: $e')));
+      }
+    }
   }
 
   @override
@@ -29,146 +101,107 @@ class _NotificationsPageState extends State<NotificationsPage> {
     super.dispose();
   }
 
-  void _onScroll() {
-    setState(() {
-      _isScrolled = _scrollController.offset > 0;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Sample notification data with placeholder icon paths
-    final List<Map<String, dynamic>> notifications = [
-      {
-        'title': 'New Grievance assigned',
-        'description':
-            'You have been assigned a new water supply grievance in east sector',
-        'timestamp': '2 hours ago',
-        'iconPath': 'assets/images/icon1.svg',
-      },
-      {
-        'title': 'Status Updated',
-        'description':
-            'Officer Sharma updated the status of a sewage issue to “In progress”.',
-        'timestamp': '3 hours ago',
-        'iconPath': 'assets/images/icon2.svg',
-      },
-      {
-        'title': 'Grievance Resolved',
-        'description': 'Pothole at MG road has been as resolved.',
-        'timestamp': '1 day ago',
-        'iconPath': 'assets/images/icon3.svg',
-      },
-      {
-        'title': 'Grievance Rejected',
-        'description': 'Pothole at MG road has been as resolved.',
-        'timestamp': '1 day ago',
-        'iconPath': 'assets/images/icon4.svg',
-      },
-      {
-        'title': 'System notification',
-        'description':
-            'Scheduled maintenance this weekend. The system will be down from 10 PM to 2 AM.',
-        'timestamp': '2 day ago',
-        'iconPath': 'assets/images/icon5.svg',
-      },
-    ];
-
-    // Widget to build a notification tile
     Widget buildNotificationTile(Map<String, dynamic> data) {
       const double icon3Size = 20.0;
       final double iconSize =
           data['iconPath'] == 'assets/images/icon3.svg' ? icon3Size : 14.0;
 
-      return Container(
-        width: 335,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-        decoration: ShapeDecoration(
-          color: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          shadows: const [
-            BoxShadow(
-              color: Color(0x19000000),
-              blurRadius: 20,
-              offset: Offset(0, 2),
-              spreadRadius: 0,
+      return GestureDetector(
+        onTap: () => _onNotificationTap(data),
+        child: Container(
+          width: 335,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+          decoration: ShapeDecoration(
+            color: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              clipBehavior: Clip.antiAlias,
-              decoration: ShapeDecoration(
-                color: const Color(0xFFF8F8F8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(204.08),
+            shadows: const [
+              BoxShadow(
+                color: Color(0x19000000),
+                blurRadius: 20,
+                offset: Offset(0, 2),
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                clipBehavior: Clip.antiAlias,
+                decoration: ShapeDecoration(
+                  color: const Color(0xFFF8F8F8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(204.08),
+                  ),
+                ),
+                child: SvgPicture.asset(
+                  data['iconPath'] ?? 'assets/images/icon1.svg',
+                  width: iconSize,
+                  height: iconSize,
+                  fit: BoxFit.contain,
                 ),
               ),
-              child: SvgPicture.asset(
-                data['iconPath'],
-                width: iconSize,
-                height: iconSize,
-                fit: BoxFit.contain,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 279,
+                      child: Text(
+                        data['title'],
+                        style: const TextStyle(
+                          color: Color(0xFF030100),
+                          fontSize: 14,
+                          fontFamily: 'Inter Display',
+                          fontWeight: FontWeight.w400,
+                          height: 1.57,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    SizedBox(
+                      width: 279,
+                      child: Text(
+                        data['description'],
+                        style: const TextStyle(
+                          color: Color(0xFF8C8885),
+                          fontSize: 14,
+                          fontFamily: 'Inter Display',
+                          fontWeight: FontWeight.w400,
+                          height: 1.57,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    SizedBox(
+                      width: 279,
+                      child: Text(
+                        data['timestamp'],
+                        style: const TextStyle(
+                          color: Color(0xFF8C8885),
+                          fontSize: 12,
+                          fontFamily: 'Inter Display',
+                          fontWeight: FontWeight.w400,
+                          height: 1.67,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 279,
-                    child: Text(
-                      data['title'],
-                      style: const TextStyle(
-                        color: Color(0xFF030100),
-                        fontSize: 14,
-                        fontFamily: 'Inter Display',
-                        fontWeight: FontWeight.w400,
-                        height: 1.57,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    width: 279,
-                    child: Text(
-                      data['description'],
-                      style: const TextStyle(
-                        color: Color(0xFF8C8885),
-                        fontSize: 14,
-                        fontFamily: 'Inter Display',
-                        fontWeight: FontWeight.w400,
-                        height: 1.57,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    width: 279,
-                    child: Text(
-                      data['timestamp'],
-                      style: const TextStyle(
-                        color: Color(0xFF8C8885),
-                        fontSize: 12,
-                        fontFamily: 'Inter Display',
-                        fontWeight: FontWeight.w400,
-                        height: 1.67,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }
@@ -179,7 +212,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
         child: CustomScrollView(
           controller: _scrollController,
           slivers: [
-            // Custom SliverPersistentHeader for the header
             SliverPersistentHeader(
               pinned: true,
               delegate: _NotificationsSliverAppBarDelegate(
@@ -195,25 +227,35 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 },
               ),
             ),
-            // Increased spacing to match minExtent and prevent clipping
             const SliverToBoxAdapter(child: SizedBox(height: 48)),
-            // Notification Tiles
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: notifications.length,
-                      separatorBuilder:
-                          (context, index) => const SizedBox(height: 16),
-                      itemBuilder:
-                          (context, index) =>
-                              buildNotificationTile(notifications[index]),
-                    ),
+                    notifications.isEmpty
+                        ? const Center(
+                          child: Text(
+                            'No notifications available',
+                            style: TextStyle(
+                              color: Color(0xFF8C8885),
+                              fontSize: 16,
+                              fontFamily: 'Inter Display',
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        )
+                        : ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: notifications.length,
+                          separatorBuilder:
+                              (context, index) => const SizedBox(height: 16),
+                          itemBuilder:
+                              (context, index) =>
+                                  buildNotificationTile(notifications[index]),
+                        ),
                     const SizedBox(height: 32),
                   ],
                 ),
@@ -236,7 +278,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               MaterialPageRoute(builder: (context) => const GrievancesScreen()),
             );
           } else if (index == 2) {
-            // Already on NotificationsPage, do nothing
+            // Already on NotificationsPage
           } else if (index == 3) {
             Navigator.pushReplacement(
               context,
@@ -249,7 +291,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 }
 
-// Custom SliverPersistentHeaderDelegate for Notifications header
 class _NotificationsSliverAppBarDelegate
     extends SliverPersistentHeaderDelegate {
   final double expandedHeight;
@@ -266,7 +307,7 @@ class _NotificationsSliverAppBarDelegate
   double get maxExtent => expandedHeight;
 
   @override
-  double get minExtent => 48; // Minimum height when collapsed
+  double get minExtent => 48;
 
   @override
   bool shouldRebuild(covariant _NotificationsSliverAppBarDelegate oldDelegate) {
@@ -288,7 +329,6 @@ class _NotificationsSliverAppBarDelegate
       color: Colors.white,
       child: Stack(
         children: [
-          // Top row with back button and collapsed title
           Positioned(
             top: 8,
             left: 20,
@@ -296,7 +336,6 @@ class _NotificationsSliverAppBarDelegate
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Back button
                 GestureDetector(
                   onTap: onBackPressed,
                   child: Container(
@@ -312,7 +351,6 @@ class _NotificationsSliverAppBarDelegate
                     ),
                   ),
                 ),
-                // Title in collapsed state
                 AnimatedOpacity(
                   opacity: 1 - visibilityPercentage,
                   duration: const Duration(milliseconds: 300),
@@ -340,7 +378,6 @@ class _NotificationsSliverAppBarDelegate
               ],
             ),
           ),
-          // Title in expanded state
           Positioned(
             left: 20,
             top: 72,
@@ -361,7 +398,6 @@ class _NotificationsSliverAppBarDelegate
               ),
             ),
           ),
-          // Subtitle
           Positioned(
             left: 20,
             top: 112,

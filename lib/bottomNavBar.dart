@@ -43,17 +43,17 @@ class BottomNavBar extends StatelessWidget {
                   // Home
                   Container(
                     width: 55,
-                    height: 50,
+                    height: 54, // Increased to accommodate text below icon
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         Positioned(
                           top: 0,
                           child: Center(
-                            child: GestureDetector(
-                              onTap: () => onItemTapped(0),
-                              child: SvgPicture.asset(
-                                'assets/images/home.svg', // Placeholder: replace with your icon path
+                            child: IconButton(
+                              onPressed: () => onItemTapped(0),
+                              icon: SvgPicture.asset(
+                                'assets/images/home.svg',
                                 width: 20,
                                 height: 20,
                                 color:
@@ -61,17 +61,22 @@ class BottomNavBar extends StatelessWidget {
                                         ? const Color(0xFFD96C07)
                                         : null,
                               ),
+                              iconSize: 20,
+                              splashRadius: 28, // Large enough to wrap icon
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              color: Colors.transparent, // Transparent button
                             ),
                           ),
                         ),
                         Positioned(
-                          top: 24,
+                          top: 40, // Adjusted to place text below icon
                           child: Container(
                             width: 55,
                             child: Text(
                               'Home',
                               style: TextStyle(
-                                fontSize: 10, // Reduced to fit
+                                fontSize: 10,
                                 fontFamily: 'Inter Display',
                                 fontWeight:
                                     selectedIndex == 0
@@ -95,17 +100,17 @@ class BottomNavBar extends StatelessWidget {
                   // Grievances
                   Container(
                     width: 55,
-                    height: 50,
+                    height: 54, // Increased to accommodate text below icon
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         Positioned(
                           top: 0,
                           child: Center(
-                            child: GestureDetector(
-                              onTap: () => onItemTapped(1),
-                              child: SvgPicture.asset(
-                                'assets/images/grievances.svg', // Placeholder: replace with your icon path
+                            child: IconButton(
+                              onPressed: () => onItemTapped(1),
+                              icon: SvgPicture.asset(
+                                'assets/images/grievances.svg',
                                 width: 20,
                                 height: 20,
                                 color:
@@ -113,17 +118,22 @@ class BottomNavBar extends StatelessWidget {
                                         ? const Color(0xFFD96C07)
                                         : null,
                               ),
+                              iconSize: 20,
+                              splashRadius: 28, // Large enough to wrap icon
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              color: Colors.transparent, // Transparent button
                             ),
                           ),
                         ),
                         Positioned(
-                          top: 24,
+                          top: 40, // Adjusted to place text below icon
                           child: Container(
                             width: 55,
                             child: Text(
                               'Grievances',
                               style: TextStyle(
-                                fontSize: 10, // Reduced to fit
+                                fontSize: 10,
                                 fontFamily: 'Inter Display',
                                 fontWeight:
                                     selectedIndex == 1
@@ -146,18 +156,18 @@ class BottomNavBar extends StatelessWidget {
                   const SizedBox(width: 43), // Spacing: 43 between containers
                   // Notifications
                   Container(
-                    width: 55,
-                    height: 50,
+                    width: 65, // Kept to accommodate longer text
+                    height: 54, // Increased to accommodate text below icon
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         Positioned(
                           top: 0,
                           child: Center(
-                            child: GestureDetector(
-                              onTap: () => onItemTapped(2),
-                              child: SvgPicture.asset(
-                                'assets/images/notifications.svg', // Placeholder: replace with your icon path
+                            child: IconButton(
+                              onPressed: () => onItemTapped(2),
+                              icon: SvgPicture.asset(
+                                'assets/images/notifications.svg',
                                 width: 20,
                                 height: 20,
                                 color:
@@ -165,17 +175,22 @@ class BottomNavBar extends StatelessWidget {
                                         ? const Color(0xFFD96C07)
                                         : null,
                               ),
+                              iconSize: 20,
+                              splashRadius: 28, // Large enough to wrap icon
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              color: Colors.transparent, // Transparent button
                             ),
                           ),
                         ),
                         Positioned(
-                          top: 24,
+                          top: 40, // Adjusted to place text below icon
                           child: Container(
                             width: 65,
                             child: Text(
                               'Notifications',
                               style: TextStyle(
-                                fontSize: 10, // Reduced to fit
+                                fontSize: 10,
                                 fontFamily: 'Inter Display',
                                 fontWeight:
                                     selectedIndex == 2
@@ -199,17 +214,17 @@ class BottomNavBar extends StatelessWidget {
                   // Profile
                   Container(
                     width: 55,
-                    height: 50,
+                    height: 54, // Increased to accommodate text below icon
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         Positioned(
                           top: 0,
                           child: Center(
-                            child: GestureDetector(
-                              onTap: () => onItemTapped(3),
-                              child: SvgPicture.asset(
-                                'assets/images/profile.svg', // Placeholder: replace with your icon path
+                            child: IconButton(
+                              onPressed: () => onItemTapped(3),
+                              icon: SvgPicture.asset(
+                                'assets/images/profile.svg',
                                 width: 20,
                                 height: 20,
                                 color:
@@ -217,17 +232,22 @@ class BottomNavBar extends StatelessWidget {
                                         ? const Color(0xFFD96C07)
                                         : null,
                               ),
+                              iconSize: 20,
+                              splashRadius: 28, // Large enough to wrap icon
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              color: Colors.transparent, // Transparent button
                             ),
                           ),
                         ),
                         Positioned(
-                          top: 24,
+                          top: 40, // Adjusted to place text below icon
                           child: Container(
                             width: 55,
                             child: Text(
                               'Profile',
                               style: TextStyle(
-                                fontSize: 10, // Reduced to fit
+                                fontSize: 10,
                                 fontFamily: 'Inter Display',
                                 fontWeight:
                                     selectedIndex == 3

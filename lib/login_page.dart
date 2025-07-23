@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import './baseUrl.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Add this
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -122,11 +123,15 @@ class _LoginPageState extends State<LoginPage> {
           final token = responseData['token'] ?? '';
 
           // Store user data in secure storage
+          // Store user data in secure storage
           await _storeUserData(
             phone: _mobileController.text.trim(),
             depUserId: _depUserId!,
             token: token,
           );
+
+          // Immediately register FCM token to backend
+          await _registerFcmToken(token);
 
           ScaffoldMessenger.of(
             context,
@@ -177,6 +182,44 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       print('Error storing user data: $e');
       // Handle storage error if needed
+    }
+  }
+
+  Future<void> _registerFcmToken(String authToken) async {
+    try {
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+      print('Generated FCM Token: $fcmToken');
+      if (fcmToken != null && authToken.isNotEmpty) {
+        final depUserId = await _storage.read(key: 'depUserId');
+        if (depUserId == null) {
+          print('Error: depUserId not found in storage');
+          return;
+        }
+        final url = Uri.parse(
+          '$baseUrl/api/app/department/update-fcm-token?token=$authToken',
+        );
+        final response = await http.post(
+          url,
+          headers: {
+            'Content-Type': 'text/plain', // Changed to text/plain
+          },
+          body: fcmToken, // Send FCM token as plain string
+        );
+        print(
+          'FCM token registration status: ${response.statusCode} - ${response.body}',
+        );
+        if (response.statusCode != 200) {
+          print('Failed to register FCM token: ${response.body}');
+        } else {
+          print(
+            'Successfully registered FCM token for depUserId=$depUserId: $fcmToken',
+          );
+        }
+      } else {
+        print('FCM token registration skipped: fcmToken or authToken missing');
+      }
+    } catch (e) {
+      print('Error registering FCM token: $e');
     }
   }
 

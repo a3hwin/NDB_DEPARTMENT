@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'bottomNavBar.dart';
 import 'home_page.dart';
 import 'notif.dart';
 import 'profile.dart';
-import 'update_page.dart'; // Add this import for UpdatePage
+import 'update_page.dart';
 
 // Define DropdownData class for type safety
 class DropdownData {
@@ -23,67 +26,21 @@ class GrievancesScreen extends StatefulWidget {
 
 class _GrievancesScreenState extends State<GrievancesScreen> {
   String? selectedStatus;
-  String? selectedCategory;
-  String? selectedArea;
   String? selectedDate;
   bool _isSearchBarVisible = false;
   bool _isScrolled = false;
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-
-  // Sample data for grievance tiles
-  final List<Map<String, String>> grievanceData = [
-    {
-      'title': 'Water Supply Interruption',
-      'category': 'Water',
-      'status': 'New',
-      'statusCode': 'SC-2025-2738',
-      'reporter': 'Shalini Verma',
-      'location': 'East Sector, Doddaballapura',
-      'timestamp': 'Jun 10, 2025 | 03:17 PM',
-    },
-    {
-      'title': 'Electricity Outage',
-      'category': 'Electricity',
-      'status': 'In Progress',
-      'statusCode': 'SC-2025-2739',
-      'reporter': 'Ravi Kumar',
-      'location': 'West Sector, Doddaballapura',
-      'timestamp': 'Jun 11, 2025 | 10:00 AM',
-    },
-    {
-      'title': 'Pothole on MG Road',
-      'category': 'Infrastructure',
-      'status': 'Resolved',
-      'statusCode': 'SC-2025-2740',
-      'reporter': 'Anita Singh',
-      'location': 'North Sector, Doddaballapura',
-      'timestamp': 'Jun 12, 2025 | 02:45 PM',
-    },
-    {
-      'title': 'Garbage Collection Delay',
-      'category': 'Infrastructure',
-      'status': 'Rejected',
-      'statusCode': 'SC-2025-2741',
-      'reporter': 'Vikram Patel',
-      'location': 'South Sector, Doddaballapura',
-      'timestamp': 'Jun 13, 2025 | 09:30 AM',
-    },
-    {
-      'title': 'Street lights not working',
-      'category': 'Water',
-      'status': 'Rejected',
-      'statusCode': 'SC-2025-2738',
-      'reporter': 'Shalini Verma',
-      'location': 'East Sector, Doddaballapura',
-      'timestamp': 'May 27, 2025 | 03:17 PM',
-    },
-  ];
+  List<Map<String, dynamic>> grievanceData = [];
+  bool isLoading = true;
+  String? errorMessage;
+  final _storage = const FlutterSecureStorage();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    fetchGrievances();
   }
 
   @override
@@ -103,70 +60,242 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
   void _toggleSearchBar() {
     setState(() {
       _isSearchBarVisible = !_isSearchBarVisible;
+      if (!_isSearchBarVisible) {
+        _searchController.clear();
+      }
     });
   }
 
-  // Function to get colors for status badge
+  Future<void> fetchGrievances() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final token = await _storage.read(key: 'authToken');
+      print('Token: $token'); // Debug: Log the token
+      if (token == null || token.isEmpty) {
+        setState(() {
+          errorMessage = 'No authentication token found';
+          isLoading = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No authentication token found')),
+          );
+        }
+        return;
+      }
+
+      final response = await http.get(
+        Uri.parse(
+          'https://ndb-apis-69em6.ondigitalocean.app/api/app/department/display-all-concerns/$token',
+        ),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      print('API Response Status: ${response.statusCode}'); // Debug: Log status
+      print('API Response Body: ${response.body}'); // Debug: Log response body
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        print('Raw API Data: $data'); // Debug: Log unfiltered data
+        setState(() {
+          grievanceData =
+              data
+                  .where((item) => [1, 2, 3].contains(item['concern_status']))
+                  .map((item) {
+                    print('Processing item: $item'); // Debug: Log each item
+                    return {
+                      'id': item['id']?.toString(),
+                      'title': (item['concern_title'] ?? '').toString(),
+                      'status': mapStatus(
+                        (item['concern_status'] ?? 1).toString(),
+                      ),
+                      'statusCode': (item['refrence_id'] ?? '').toString(),
+                      'reporter':
+                          (item['raised_citizen_name'] ?? '').toString(),
+                      'location': (item['citizen_locality'] ?? '').toString(),
+                      'address': (item['location'] ?? '').toString(),
+                      'timestamp': formatTimestamp(
+                        (item['created_date'] ?? '').toString(),
+                        (item['created_time'] ?? '').toString(),
+                      ),
+                      'description':
+                          (item['concern_description'] ?? '').toString(),
+                      'photos': (item['photos'] ?? '').toString(),
+                      'contact_number':
+                          (item['citizen_mobile'] ?? '').toString(),
+                      'email': (item['citizen_email'] ?? '').toString(),
+                      'epid_id': (item['citizen_epic_no'] ?? '').toString(),
+                      'created_date': (item['created_date'] ?? '').toString(),
+                    };
+                  })
+                  .toList();
+          isLoading = false;
+        });
+        print('Grievance Data: $grievanceData'); // Debug: Log parsed data
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green),
+                  SizedBox(width: 8),
+                  Text('Grievances refreshed successfully'),
+                ],
+              ),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        setState(() {
+          errorMessage = 'Failed to load grievances: ${response.statusCode}';
+          isLoading = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(errorMessage!)));
+        }
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Error fetching grievances: $e';
+        isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMessage!)));
+      }
+    }
+  }
+
+  String mapStatus(String apiStatus) {
+    switch (apiStatus) {
+      case '1':
+        return 'Assigned';
+      case '2':
+        return 'Accepted';
+      case '3':
+        return 'Resolved';
+      default:
+        return 'Assigned';
+    }
+  }
+
+  String formatTimestamp(String date, String time) {
+    if (date.isEmpty || time.isEmpty) return '';
+    try {
+      final dateTime = DateTime.parse('$date $time');
+      final month =
+          [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'May',
+            'Jun',
+            'Jul',
+            'Aug',
+            'Sep',
+            'Oct',
+            'Nov',
+            'Dec',
+          ][dateTime.month - 1];
+      final day = dateTime.day.toString().padLeft(2, '0');
+      final year = dateTime.year;
+      final hour = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
+      final minute = dateTime.minute.toString().padLeft(2, '0');
+      final period = dateTime.hour >= 12 ? 'PM' : 'AM';
+      return '$month $day, $year | $hour:$minute $period';
+    } catch (e) {
+      print('Timestamp Format Error: $e, Date: $date, Time: $time'); // Debug
+      return '$date | $time';
+    }
+  }
+
+  bool _filterByDate(Map<String, dynamic> grievance) {
+    final createdDateStr = grievance['created_date'] as String;
+    if (createdDateStr.isEmpty) {
+      print(
+        'Empty created_date for grievance: ${grievance['statusCode']}',
+      ); // Debug
+      return false;
+    }
+
+    try {
+      final createdDate = DateTime.parse(createdDateStr);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
+      print(
+        'Filtering: ${grievance['statusCode']}, created_date: $createdDateStr, selectedDate: $selectedDate',
+      ); // Debug
+
+      if (selectedDate == null || selectedDate == 'All') {
+        return true; // Show all dates when no filter or 'All' is selected
+      }
+
+      switch (selectedDate) {
+        case 'Today':
+          return createdDate.year == today.year &&
+              createdDate.month == today.month &&
+              createdDate.day == today.day;
+        case 'This Week':
+          return now.difference(createdDate).inDays <= 7;
+        case 'Last Month':
+          return now.difference(createdDate).inDays <= 30;
+        case 'Long Time Ago':
+          return now.difference(createdDate).inDays > 30;
+        default:
+          return true;
+      }
+    } catch (e) {
+      print('Date Parse Error for ${grievance['statusCode']}: $e'); // Debug
+      return false; // Exclude invalid dates
+    }
+  }
+
+  bool _filterBySearch(Map<String, dynamic> grievance) {
+    final searchQuery = _searchController.text.toLowerCase();
+    if (searchQuery.isEmpty) return true;
+    return (grievance['statusCode']?.toLowerCase().contains(searchQuery) ??
+            false) ||
+        (grievance['title']?.toLowerCase().contains(searchQuery) ?? false) ||
+        (grievance['location']?.toLowerCase().contains(searchQuery) ?? false);
+  }
+
   Map<String, Color> getStatusBadgeColors(String status) {
     switch (status) {
-      case 'New':
+      case 'Assigned':
         return {
-          'background': const Color(0xFFE6F3FF),
-          'text': const Color(0xFF007AFF),
+          'background': const Color(0xFFFFE6E6),
+          'text': const Color(0xFFB91C1C),
         };
-      case 'In Progress':
+      case 'Accepted':
         return {
           'background': const Color(0xFFFFF7E6),
           'text': const Color(0xFFD97706),
         };
       case 'Resolved':
         return {
-          'background': const Color(0xFFE6F9E9),
+          'background': const Color(0xFFDCFCE7),
           'text': const Color(0xFF036B1E),
         };
-      case 'Rejected':
+      default:
         return {
           'background': const Color(0xFFFFE6E6),
           'text': const Color(0xFFB91C1C),
         };
-      default:
-        return {
-          'background': const Color(0xFFDBEAFE),
-          'text': const Color(0xFF007AFF),
-        };
     }
   }
 
-  // Function to get colors for category badge
-  Map<String, Color> getCategoryBadgeColors(String category) {
-    switch (category) {
-      case 'Water':
-        return {
-          'background': const Color(0xFFE6F0FF),
-          'text': const Color(0xFF1E40AF),
-        };
-      case 'Electricity':
-        return {
-          'background': const Color(0xFFFFF0E6),
-          'text': const Color(0xFFD97706),
-        };
-      case 'Infrastructure':
-        return {
-          'background': const Color(0xFFE6E6E6),
-          'text': const Color(0xFF374151),
-        };
-      default:
-        return {
-          'background': const Color(0xFFFFF3EB),
-          'text': const Color(0xFFD96C07),
-        };
-    }
-  }
-
-  // Widget for building grievance tiles
-  Widget buildGrievanceTile(Map<String, String> data) {
+  Widget buildGrievanceTile(Map<String, dynamic> data) {
     final statusColors = getStatusBadgeColors(data['status']!);
-    final categoryColors = getCategoryBadgeColors(data['category']!);
 
     return Container(
       width: 335,
@@ -206,54 +335,24 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
           Positioned(
             left: 16,
             top: 16,
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: ShapeDecoration(
-                    color: categoryColors['background'],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    data['category']!,
-                    style: TextStyle(
-                      color: categoryColors['text'],
-                      fontSize: 12,
-                      fontFamily: 'Inter Display',
-                      fontWeight: FontWeight.w400,
-                      height: 1.67,
-                    ),
-                  ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: ShapeDecoration(
+                color: statusColors['background'],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: ShapeDecoration(
-                    color: statusColors['background'],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    '${data['status']}: ${data['statusCode']}',
-                    style: TextStyle(
-                      color: statusColors['text'],
-                      fontSize: 12,
-                      fontFamily: 'Inter Display',
-                      fontWeight: FontWeight.w400,
-                      height: 1.67,
-                    ),
-                  ),
+              ),
+              child: Text(
+                '${data['status']}: ${data['statusCode']}',
+                style: TextStyle(
+                  color: statusColors['text'],
+                  fontSize: 12,
+                  fontFamily: 'Inter Display',
+                  fontWeight: FontWeight.w400,
+                  height: 1.67,
                 ),
-              ],
+              ),
             ),
           ),
           Positioned(
@@ -262,7 +361,7 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
             child: SizedBox(
               width: 303,
               child: Text(
-                '${data['reporter']} • ${data['location']}',
+                '${data['reporter']?.isEmpty ?? true ? 'N/A' : data['reporter']} • ${data['location']?.isEmpty ?? true ? 'N/A' : data['location']}',
                 style: const TextStyle(
                   color: Color(0xFF8C8885),
                   fontSize: 14,
@@ -293,16 +392,14 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
             right: 30,
             child: InkWell(
               onTap: () {
-                if (data['title'] == 'Pothole on MG Road') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => UpdatePage(data: data),
-                    ),
-                  );
-                } else {
-                  print('View Details pressed for ${data['title']}');
-                }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) =>
+                            UpdatePage(data: Map<String, String>.from(data)),
+                  ),
+                );
               },
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -337,17 +434,12 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
     setState(() {
       if (label == 'Status') {
         selectedStatus = value == 'All' ? null : value;
-      } else if (label == 'Category') {
-        selectedCategory = value == 'All' ? null : value;
-      } else if (label == 'Area') {
-        selectedArea = value == 'All' ? null : value;
       } else if (label == 'Date') {
         selectedDate = value == 'All' ? null : value;
       }
     });
   }
 
-  // Build the search bar widget with a TextField
   Widget buildSearchBar() {
     return Container(
       width: double.infinity,
@@ -372,15 +464,12 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SvgPicture.asset(
-            'assets/images/search.svg', // Ensure this path is correct
-            width: 20,
-            height: 20,
-          ),
+          SvgPicture.asset('assets/images/search.svg', width: 20, height: 20),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
               controller: _searchController,
+              onChanged: (value) => setState(() {}),
               decoration: const InputDecoration(
                 hintText: 'Search grievances by ID, Title or area...',
                 hintStyle: TextStyle(
@@ -406,7 +495,6 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
     );
   }
 
-  // Build dropdown buttons widget
   Widget buildDropdownButtons(List<DropdownData> dropdowns) {
     const dropdownTextStyle = TextStyle(
       color: Color(0xFF030100),
@@ -417,19 +505,18 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
     );
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 24),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children:
               dropdowns.map((DropdownData dropdown) {
                 String? selectedValue;
                 if (dropdown.label == 'Status') {
                   selectedValue = selectedStatus;
-                } else if (dropdown.label == 'Category') {
-                  selectedValue = selectedCategory;
-                } else if (dropdown.label == 'Area') {
-                  selectedValue = selectedArea;
                 } else if (dropdown.label == 'Date') {
                   selectedValue = selectedDate;
                 }
@@ -447,10 +534,8 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
                       ),
                     ),
                     child: PopupMenuButton<String>(
-                      constraints: const BoxConstraints.tightFor(
-                        width: null, // Let content determine width
-                      ),
-                      offset: const Offset(0, 40), // Below button
+                      constraints: const BoxConstraints.tightFor(width: null),
+                      offset: const Offset(0, 40),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                         side: const BorderSide(color: Color(0xFFA8A5A2)),
@@ -470,9 +555,8 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
                                   child: Text(value, style: dropdownTextStyle),
                                 );
                               }).toList(),
-                      onSelected: (value) {
-                        onDropdownChanged(dropdown.label, value);
-                      },
+                      onSelected:
+                          (value) => onDropdownChanged(dropdown.label, value),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -508,75 +592,122 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
     final dropdowns = [
       DropdownData(
         label: 'Status',
-        options: ['All', 'New', 'In Progress', 'Resolved', 'Rejected'],
+        options: ['All', 'Assigned', 'Accepted', 'Resolved'],
       ),
-      DropdownData(
-        label: 'Category',
-        options: ['All', 'Water', 'Electricity', 'Infrastructure'],
-      ),
-      DropdownData(label: 'Area', options: ['All', 'Downtown', 'Suburbs']),
       DropdownData(
         label: 'Date',
         options: ['All', 'Today', 'This Week', 'Last Month', 'Long Time Ago'],
       ),
     ];
 
-    // Filter the grievance data based on selected filters
     final filteredGrievanceData =
         grievanceData.where((data) {
           final statusMatch =
-              selectedStatus == null || data['status'] == selectedStatus;
-          final categoryMatch =
-              selectedCategory == null || data['category'] == selectedCategory;
-          // Area and Date filters are placeholders for now
-          return statusMatch && categoryMatch;
+              selectedStatus == null ||
+              selectedStatus == 'All' ||
+              data['status'] == selectedStatus;
+          final dateMatch = _filterByDate(data);
+          final searchMatch = _filterBySearch(data);
+          print(
+            'Grievance: ${data['statusCode']}, Status Match: $statusMatch, Date Match: $dateMatch, Search Match: $searchMatch',
+          ); // Debug
+          return statusMatch && dateMatch && searchMatch;
         }).toList();
+
+    print('Filtered Grievances: $filteredGrievanceData'); // Debug
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            // Custom SliverAppBar implementation
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _GrievancesSliverAppBarDelegate(
-                expandedHeight: 290,
-                isScrolled: _isScrolled,
-                isSearchBarVisible: _isSearchBarVisible,
-                toggleSearchBar: _toggleSearchBar,
-                searchBarWidget: buildSearchBar(),
-                dropdownButtonsWidget: buildDropdownButtons(dropdowns),
-                onBackPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const DashboardPage(),
-                    ),
-                  );
-                },
-              ),
-            ),
-            // 24px spacing between app bar and first tile
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-            // Grievance List
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate(
-                  filteredGrievanceData
-                      .map(
-                        (data) => Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: buildGrievanceTile(data),
-                        ),
-                      )
-                      .toList(),
+        child: RefreshIndicator(
+          onRefresh: fetchGrievances,
+          child: CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _GrievancesSliverAppBarDelegate(
+                  expandedHeight: 290,
+                  isScrolled: _isScrolled,
+                  isSearchBarVisible: _isSearchBarVisible,
+                  toggleSearchBar: _toggleSearchBar,
+                  searchBarWidget: buildSearchBar(),
+                  dropdownButtonsWidget: buildDropdownButtons(dropdowns),
+                  onBackPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DashboardPage(),
+                      ),
+                    );
+                  },
                 ),
               ),
-            ),
-          ],
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate(
+                    isLoading
+                        ? [
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                        ]
+                        : errorMessage != null
+                        ? [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            child: Column(
+                              children: [
+                                Text(
+                                  errorMessage!,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    fontFamily: 'Inter Display',
+                                    color: Color(0xFF8C8885),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: fetchGrievances,
+                                  child: const Text('Retry'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ]
+                        : filteredGrievanceData.isEmpty
+                        ? [
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Text(
+                              'No grievances match the selected filters',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                fontFamily: 'Inter Display',
+                                color: Color(0xFF8C8885),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ]
+                        : filteredGrievanceData
+                            .map(
+                              (data) => Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0),
+                                child: buildGrievanceTile(data),
+                              ),
+                            )
+                            .toList(),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: BottomNavBar(
@@ -588,7 +719,7 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
               MaterialPageRoute(builder: (context) => const DashboardPage()),
             );
           } else if (index == 1) {
-            // Already on GrievancesScreen, do nothing
+            // Already on GrievancesScreen
           } else if (index == 2) {
             Navigator.pushReplacement(
               context,
@@ -608,7 +739,6 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
   }
 }
 
-// Custom SliverPersistentHeaderDelegate for complex AppBar behavior
 class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   final double expandedHeight;
   final bool isScrolled;
@@ -651,23 +781,18 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
         1.0 - shrinkOffset / (maxExtent - minExtent);
     final double visibilityPercentage = visibilityFactor.clamp(0.0, 1.0);
 
-    // Calculate the transition values for title
     final double titleFontSize = 16 + (24 - 16) * visibilityPercentage;
-    final double titleLeftPosition = 20; // Fixed 20px from left edge
-    final double titleTopPosition =
-        20 +
-        (72 - 20) * visibilityPercentage; // 72 = position in expanded state
+    final double titleLeftPosition = 20;
+    final double titleTopPosition = 20 + (72 - 20) * visibilityPercentage;
     final FontWeight titleFontWeight =
         visibilityPercentage > 0.5 ? FontWeight.w600 : FontWeight.w500;
 
-    // Whether we're in collapsed state
     final bool isCollapsed = shrinkOffset > 0;
 
     return Container(
       color: Colors.white,
       child: Stack(
         children: [
-          // Top row with back and close/search icons
           Positioned(
             top: 20,
             left: 20,
@@ -675,7 +800,6 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Back button
                 GestureDetector(
                   onTap: onBackPressed,
                   child: Container(
@@ -691,8 +815,6 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                     ),
                   ),
                 ),
-
-                // Title in collapsed state - positioned to the right of back button
                 AnimatedOpacity(
                   opacity: 1 - visibilityPercentage,
                   duration: const Duration(milliseconds: 300),
@@ -716,22 +838,9 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                     ),
                   ),
                 ),
-
                 const Spacer(),
-
-                // Close/Search icon
                 GestureDetector(
-                  onTap:
-                      isCollapsed
-                          ? toggleSearchBar
-                          : () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const DashboardPage(),
-                              ),
-                            );
-                          },
+                  onTap: isCollapsed ? toggleSearchBar : onBackPressed,
                   child: Container(
                     width: 36,
                     height: 36,
@@ -748,8 +857,6 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
               ],
             ),
           ),
-
-          // Title in expanded state
           Positioned(
             left: titleLeftPosition,
             top: titleTopPosition,
@@ -758,15 +865,15 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
               duration: const Duration(milliseconds: 300),
               child: Visibility(
                 visible: visibilityPercentage > 0.1,
-                child: SizedBox(
+                child: const SizedBox(
                   width: 335,
                   child: Text(
                     'Grievances',
                     style: TextStyle(
-                      color: const Color(0xFF030100),
-                      fontSize: titleFontSize,
+                      color: Color(0xFF030100),
+                      fontSize: 24,
                       fontFamily: 'Inter Display',
-                      fontWeight: titleFontWeight,
+                      fontWeight: FontWeight.w600,
                       height: 1.33,
                     ),
                   ),
@@ -774,11 +881,9 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
               ),
             ),
           ),
-
-          // Subtitle - with consistent 20px left margin
           Positioned(
             left: 20,
-            top: 112, // 72 (title top) + 24 (title height) + 16 (spacing)
+            top: 112,
             child: AnimatedOpacity(
               opacity: visibilityPercentage,
               duration: const Duration(milliseconds: 300),
@@ -800,12 +905,10 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
               ),
             ),
           ),
-
-          // Search bar in expanded state - with increased spacing
           Positioned(
             left: 20,
             right: 20,
-            top: 164, // Increased spacing from subtitle (112 + 16 + 36)
+            top: 164,
             child: AnimatedOpacity(
               opacity: visibilityPercentage,
               duration: const Duration(milliseconds: 300),
@@ -815,17 +918,8 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
               ),
             ),
           ),
-
-          // Search bar in collapsed state (only when toggled)
           if (isSearchBarVisible && isCollapsed)
-            Positioned(
-              left: 20,
-              right: 20,
-              top: 66, // Below the app bar top section
-              child: searchBarWidget,
-            ),
-
-          // Dropdown buttons
+            Positioned(left: 20, right: 20, top: 66, child: searchBarWidget),
           Positioned(
             left: 0,
             right: 0,
