@@ -6,7 +6,7 @@ import 'home_page.dart';
 import 'grievancesPage.dart';
 import 'notif.dart';
 import 'edit.dart';
-import 'login_page.dart'; // Add this import for the LoginPage
+import 'login_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -19,21 +19,17 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isGetInTouchExpanded = false;
   bool _isCallUsExpanded = false;
   bool _isSupportEmailExpanded = false;
-  final _storage = const FlutterSecureStorage(); // Initialize secure storage
+  final _storage = const FlutterSecureStorage();
 
-  // Logout function
   Future<void> _logout() async {
     try {
-      // Delete authentication token and other user data
       await _storage.delete(key: 'authToken');
-      await _storage.delete(key: 'userPhone'); // Optional
-      await _storage.delete(key: 'depUserId'); // Optional
+      await _storage.delete(key: 'userPhone');
+      await _storage.delete(key: 'depUserId');
     } catch (e) {
       print('Error deleting from secure storage: $e');
-      // Proceed to login page even if deletion fails
     }
 
-    // Navigate to LoginPage and remove all previous routes
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const LoginPage()),
@@ -50,7 +46,6 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
               Container(
                 width: MediaQuery.of(context).size.width,
                 height: 196,
@@ -106,7 +101,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 16),
-              // Options
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
@@ -138,7 +132,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       buildSupportEmailSection(),
                     ],
                     buildNonExpandableOption('Logout', 'Sign out securely', () {
-                      _logout(); // Call logout function
+                      _logout();
                     }),
                   ],
                 ),
@@ -295,21 +289,23 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget buildCallUsSection() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(width: 1, color: Color(0xFFE1E0DF))),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isCallUsExpanded = !_isCallUsExpanded;
-              });
-            },
-            child: Row(
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isCallUsExpanded = !_isCallUsExpanded;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom: BorderSide(width: 1, color: Color(0xFFE1E0DF)),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               mainAxisSize: MainAxisSize.max,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -345,61 +341,66 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ],
             ),
-          ),
-          if (_isCallUsExpanded) ...[
-            const SizedBox(height: 8),
-            const Text(
-              'CALL US ON',
-              style: TextStyle(
-                color: Color(0xFFD96C07),
-                fontSize: 12,
-                fontFamily: 'Inter Display',
-                fontWeight: FontWeight.w500,
-                height: 1.67,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: ShapeDecoration(
-                color: const Color(0xFFD96C07),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                '080 23456789',
+            if (_isCallUsExpanded) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'CALL US ON',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFFD96C07),
                   fontSize: 12,
                   fontFamily: 'Inter Display',
                   fontWeight: FontWeight.w500,
                   height: 1.67,
                 ),
               ),
-            ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: ShapeDecoration(
+                  color: const Color(0xFFD96C07),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  '080 23456789',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontFamily: 'Inter Display',
+                    fontWeight: FontWeight.w500,
+                    height: 1.67,
+                  ),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
 
   Widget buildSupportEmailSection() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(width: 1, color: Color(0xFFE1E0DF))),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isSupportEmailExpanded = !_isSupportEmailExpanded;
-              });
-            },
-            child: Row(
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isSupportEmailExpanded = !_isSupportEmailExpanded;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom: BorderSide(width: 1, color: Color(0xFFE1E0DF)),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               mainAxisSize: MainAxisSize.max,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -435,41 +436,44 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ],
             ),
-          ),
-          if (_isSupportEmailExpanded) ...[
-            const SizedBox(height: 8),
-            const Text(
-              'EMAIL US ON',
-              style: TextStyle(
-                color: Color(0xFFD96C07),
-                fontSize: 12,
-                fontFamily: 'Inter Display',
-                fontWeight: FontWeight.w500,
-                height: 1.67,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: ShapeDecoration(
-                color: const Color(0xFFD96C07),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'SEND AN EMAIL',
+            if (_isSupportEmailExpanded) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'EMAIL US ON',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFFD96C07),
                   fontSize: 12,
                   fontFamily: 'Inter Display',
                   fontWeight: FontWeight.w500,
                   height: 1.67,
                 ),
               ),
-            ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: ShapeDecoration(
+                  color: const Color(0xFFD96C07),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'SEND AN EMAIL',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontFamily: 'Inter Display',
+                    fontWeight: FontWeight.w500,
+                    height: 1.67,
+                  ),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

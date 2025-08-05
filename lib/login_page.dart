@@ -3,7 +3,7 @@ import 'home_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import './baseUrl.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Add this
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 class LoginPage extends StatefulWidget {
@@ -20,7 +20,18 @@ class _LoginPageState extends State<LoginPage> {
   bool _otpSent = false;
   String? _errorMessage;
   int? _depUserId;
-  final _storage = const FlutterSecureStorage(); // Create storage instance
+  final _storage = const FlutterSecureStorage();
+
+  @override
+  void initState() {
+    super.initState();
+    // Add listener to mobileController to rebuild UI on text change
+    _mobileController.addListener(() {
+      setState(() {
+        // This will trigger a rebuild when the text changes
+      });
+    });
+  }
 
   // Send OTP to mobile number
   Future<void> _sendOTP() async {
@@ -119,18 +130,14 @@ class _LoginPageState extends State<LoginPage> {
       final responseData = json.decode(response.body);
       if (response.statusCode == 200) {
         if (responseData['errFlag'] == 0) {
-          // Extract token from response (adjust key as per your API)
           final token = responseData['token'] ?? '';
 
-          // Store user data in secure storage
-          // Store user data in secure storage
           await _storeUserData(
             phone: _mobileController.text.trim(),
             depUserId: _depUserId!,
             token: token,
           );
 
-          // Immediately register FCM token to backend
           await _registerFcmToken(token);
 
           ScaffoldMessenger.of(
@@ -181,7 +188,6 @@ class _LoginPageState extends State<LoginPage> {
       print('Token: $token');
     } catch (e) {
       print('Error storing user data: $e');
-      // Handle storage error if needed
     }
   }
 
@@ -200,10 +206,8 @@ class _LoginPageState extends State<LoginPage> {
         );
         final response = await http.post(
           url,
-          headers: {
-            'Content-Type': 'text/plain', // Changed to text/plain
-          },
-          body: fcmToken, // Send FCM token as plain string
+          headers: {'Content-Type': 'text/plain'},
+          body: fcmToken,
         );
         print(
           'FCM token registration status: ${response.statusCode} - ${response.body}',
@@ -333,8 +337,6 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                             const SizedBox(height: 30),
-
-                            // Mobile Number Input
                             const Text(
                               'Mobile Number',
                               style: TextStyle(
@@ -365,8 +367,6 @@ class _LoginPageState extends State<LoginPage> {
                               enabled: !_otpSent,
                             ),
                             const SizedBox(height: 20),
-
-                            // OTP Input (shown after OTP is sent)
                             if (_otpSent) ...[
                               const Text(
                                 'OTP (6 digits)',
@@ -397,7 +397,6 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               const SizedBox(height: 20),
                             ],
-
                             const SizedBox(height: 22),
                             const SizedBox(height: 20),
                             const SizedBox(height: 134),
@@ -422,12 +421,10 @@ class _LoginPageState extends State<LoginPage> {
                       onPressed:
                           _isLoading
                               ? null
-                              : _otpSent
-                              ? _verifyOTP
-                              : _sendOTP,
+                              : (_otpSent ? _verifyOTP : _sendOTP),
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
-                            _mobileController.text.isNotEmpty
+                            _mobileController.text.length == 10 && !_isLoading
                                 ? const Color(0xFFFB8B3B)
                                 : const Color(0xFFE1E0DF),
                         disabledBackgroundColor: const Color(0xFFD3D3D3),
@@ -446,7 +443,7 @@ class _LoginPageState extends State<LoginPage> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   color:
-                                      _mobileController.text.isNotEmpty
+                                      _mobileController.text.length == 10
                                           ? Colors.white
                                           : const Color(0xFF8C8885),
                                   fontFamily: 'Inter Display',
