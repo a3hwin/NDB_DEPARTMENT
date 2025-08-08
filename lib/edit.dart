@@ -117,7 +117,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _EditProfileSliverAppBarDelegate(
-                    expandedHeight: 150,
+                    expandedHeight: 160,
                     isScrolled: _isScrolled,
                     onBackPressed: () {
                       Navigator.pushReplacement(
@@ -137,7 +137,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Department Name',
+                          'ಇಲಾಖೆಯ ಹೆಸರು',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -165,7 +165,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'Department Code',
+                          'ಇಲಾಖೆಯ ಕೋಡ್‌',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -193,7 +193,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'Head Of Department',
+                          'ಇಲಾಖೆಯ ಮುಖ್ಯಸ್ಥರು',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -282,7 +282,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'Email Address',
+                          'ಇಮೇಲ್‌ ವಿಳಾಸ',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -369,7 +369,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'Mobile Number',
+                          'ಮೊಬೈಲ್‌ ಸಂಖ್ಯೆ',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -456,7 +456,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'Ward Number',
+                          'ವಾರ್ಡ್‌ ಸಂಖ್ಯೆ',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -526,7 +526,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                   child: Center(
                     child: Text(
-                      'Save',
+                      'ಉಳಿಸಿ',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white,
@@ -582,7 +582,7 @@ class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
 
     final double titleFontSize = 16 + (24 - 16) * visibilityPercentage;
     final double titleLeftPosition = 20;
-    final double titleTopPosition = 20 + (72 - 20) * visibilityPercentage;
+    final double titleTopPosition = 44 + (96 - 44) * visibilityPercentage;
     final FontWeight titleFontWeight =
         visibilityPercentage > 0.5 ? FontWeight.w600 : FontWeight.w500;
 
@@ -593,7 +593,7 @@ class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
       child: Stack(
         children: [
           Positioned(
-            top: 20,
+            top: 54,
             left: 20,
             right: 20,
             child: Row(
@@ -624,7 +624,7 @@ class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Edit account details',
+                          'ಅಕೌಂಟ್‌ ಮಾಹಿತಿ ತಿದ್ದುಪಡಿ',
                           style: TextStyle(
                             color: Color(0xFF030100),
                             fontSize: 16,
@@ -674,7 +674,7 @@ class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                 child: SizedBox(
                   width: 335,
                   child: Text(
-                    'Edit account details',
+                    'ಅಕೌಂಟ್‌ ಮಾಹಿತಿ ತಿದ್ದುಪಡಿ',
                     style: TextStyle(
                       color: const Color(0xFF030100),
                       fontSize: titleFontSize,
@@ -689,7 +689,7 @@ class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
           ),
           Positioned(
             left: 20,
-            top: 112,
+            top: 136,
             child: AnimatedOpacity(
               opacity: visibilityPercentage,
               duration: const Duration(milliseconds: 300),
@@ -698,7 +698,7 @@ class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                 child: const SizedBox(
                   width: 335,
                   child: Text(
-                    'Update your information',
+                    'ನಿಮ್ಮ ಮಾಹಿತಿಯನ್ನು ಪರಿಷ್ಕರಿಸಿ',
                     style: TextStyle(
                       color: Color(0xFF8C8885),
                       fontSize: 16,

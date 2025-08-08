@@ -38,61 +38,196 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Future<void> _loadNotifications() async {
-    final prefs = await SharedPreferences.getInstance();
-    final storedNotifications = prefs.getStringList('notifications') ?? [];
+  final prefs = await SharedPreferences.getInstance();
+  final storedNotifications = prefs.getStringList('notifications') ?? [];
+  final token = await _storage.read(key: 'authToken');
+
+  print('Loading notifications from storage: ${storedNotifications.length}');
+  print('Stored notifications raw: $storedNotifications');
+
+  if (token == null) {
+    print('No auth token found');
+    setState(() => notifications = []);
+    return;
+  }
+
+  try {
+    List<Map<String, dynamic>> loadedNotifications = storedNotifications
+        .map((n) => Map<String, dynamic>.from(jsonDecode(n)))
+        .toList();
+
+    final url = '$baseUrl/api/app/department/display-all-concerns/$token';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> concerns = jsonDecode(response.body);
+      print('Fetched ${concerns.length} concerns');
+
+      loadedNotifications = loadedNotifications.where((notification) {
+        final matchingConcern = concerns.firstWhere(
+          (c) => c['id'].toString() == notification['concernId'].toString(),
+          orElse: () => null,
+        );
+
+        if (matchingConcern == null) {
+          print('No matching concern found for notification concernId: ${notification['concernId']}');
+          return false;
+        }
+
+        final status = matchingConcern['concern_status'].toString();
+        print('Concern ${notification['concernId']} status: $status');
+        if (status == '1') {
+          notification['status'] = _mapStatus(matchingConcern['concern_status']);
+          notification['concernDetails'] = matchingConcern;
+          return true;
+        }
+        print('Filtered out concern ${notification['concernId']} with status: $status');
+        return false;
+      }).toList();
+
+      loadedNotifications.sort((a, b) =>
+          DateTime.parse(b['timestamp']).compareTo(DateTime.parse(a['timestamp'])));
+
+      print('Filtered notifications count: ${loadedNotifications.length}');
+      print('Filtered notifications: $loadedNotifications');
+
+      setState(() {
+        notifications = loadedNotifications;
+      });
+
+      await prefs.setStringList(
+        'notifications',
+        loadedNotifications.map((n) => jsonEncode(n)).toList(),
+      );
+    } else {
+      print('Failed to fetch concerns: ${response.statusCode}');
+      setState(() => notifications = []);
+    }
+  } catch (e) {
+    print('Error loading notifications: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading notifications: $e')),
+      );
+    }
+    setState(() => notifications = []);
+  }
+}
+
+  Future<void> _clearNotifications() async {
     setState(() {
-      notifications =
-          storedNotifications
-              .map((n) => Map<String, dynamic>.from(jsonDecode(n)))
-              .toList();
+      notifications = [];
     });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('notifications', []);
+  }
+
+  String _formatTimeDifference(String timestamp) {
+    try {
+      final notificationTime = DateTime.parse(timestamp);
+      final now = DateTime.now();
+      final difference = now.difference(notificationTime);
+
+      if (difference.inDays >= 1) {
+        return '${difference.inDays} days ago';
+      } else {
+        final hours = difference.inHours;
+        return hours > 0 ? '$hours hours ago' : 'Just now';
+      }
+    } catch (e) {
+      return 'Unknown time';
+    }
   }
 
   Future<void> _onNotificationTap(Map<String, dynamic> notification) async {
-    final concernId = int.tryParse(notification['concernId'] ?? '');
-    if (concernId == null) return;
-    final token = await _storage.read(key: 'authToken');
-    if (token == null) return;
+  if (notification['concernId'] == null) return;
+  
+  final token = await _storage.read(key: 'authToken');
+  if (token == null) return;
 
+  try {
     final url = '$baseUrl/api/app/department/display-all-concerns/$token';
-    try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200 && mounted) {
+      final List<dynamic> concerns = jsonDecode(response.body);
+      final concern = concerns.firstWhere(
+        (c) => c['id'].toString() == notification['concernId'].toString(),
+        orElse: () => null,
       );
-      if (response.statusCode == 200) {
-        final List<dynamic> concerns = jsonDecode(response.body);
-        final concern = concerns.firstWhere(
-          (c) => c['id'] == concernId,
-          orElse: () => null,
-        );
-        if (concern != null && mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) =>
-                      UpdatePage(data: Map<String, dynamic>.from(concern)),
-            ),
-          );
-        } else if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Grievance not found')));
-        }
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to fetch grievances')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
+
+      if (concern != null) {
+        Navigator.push(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error fetching details: $e')));
+          MaterialPageRoute(
+            builder: (context) => UpdatePage(data: {
+              'id': concern['id'].toString(),
+              'title': concern['concern_title']?.toString() ?? '',
+              'description': concern['concern_description']?.toString() ?? '',
+              'photos': concern['photos']?.toString() ?? '',
+              'address': concern['location']?.toString() ?? '',
+              'status': _mapStatus(concern['concern_status']),
+              'statusCode': concern['refrence_id']?.toString() ?? '',
+              'reporter': concern['raised_citizen_name']?.toString() ?? '',
+              'contact_number': concern['citizen_mobile']?.toString() ?? '',
+              'email': concern['citizen_email']?.toString() ?? '',
+              'concern_status': concern['concern_status'].toString(),
+              'timestamp': _formatTimestamp(
+                concern['created_date']?.toString() ?? '',
+                concern['created_time']?.toString() ?? ''
+              ),
+            }),
+          ),
+        );
       }
     }
+  } catch (e) {
+    print('Error handling notification tap: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading concern details: $e')),
+      );
+    }
   }
+}
+
+String _mapStatus(dynamic status) {
+  switch (status?.toString()) {
+    case '1':
+      return 'Assigned';
+    case '2':
+      return 'Accepted';
+    case '3':
+      return 'Resolved';
+    default:
+      return 'Assigned';
+  }
+}
+
+String _formatTimestamp(String date, String time) {
+  if (date.isEmpty || time.isEmpty) return '';
+  try {
+    final dateTime = DateTime.parse('$date $time');
+    final month = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ][dateTime.month - 1];
+    final day = dateTime.day.toString().padLeft(2, '0');
+    final year = dateTime.year;
+    final hour = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = dateTime.hour >= 12 ? 'PM' : 'AM';
+    return '$month $day, $year | $hour:$minute $period';
+  } catch (e) {
+    return '$date | $time';
+  }
+}
 
   @override
   void dispose() {
@@ -103,13 +238,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
-    Widget buildNotificationTile(Map<String, dynamic> data) {
-      const double icon3Size = 20.0;
-      final double iconSize =
-          data['iconPath'] == 'assets/images/icon3.svg' ? icon3Size : 14.0;
-
+    Widget buildNotificationTile(Map<String, dynamic> notification) {
       return GestureDetector(
-        onTap: () => _onNotificationTap(data),
+        onTap: () => _onNotificationTap(notification),
         child: Container(
           width: 335,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
@@ -143,9 +274,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   ),
                 ),
                 child: SvgPicture.asset(
-                  data['iconPath'] ?? 'assets/images/icon1.svg',
-                  width: iconSize,
-                  height: iconSize,
+                  'assets/images/icon1.svg',
+                  width: 14.0,
+                  height: 14.0,
                   fit: BoxFit.contain,
                 ),
               ),
@@ -159,7 +290,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     SizedBox(
                       width: 279,
                       child: Text(
-                        data['title'],
+                        notification['title']?.toString() ?? 'No Title',
                         style: const TextStyle(
                           color: Color(0xFF030100),
                           fontSize: 14,
@@ -173,7 +304,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     SizedBox(
                       width: 279,
                       child: Text(
-                        data['description'],
+                        notification['description']?.toString() ?? 'No Description',
                         style: const TextStyle(
                           color: Color(0xFF8C8885),
                           fontSize: 14,
@@ -187,7 +318,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     SizedBox(
                       width: 279,
                       child: Text(
-                        data['timestamp'],
+                        _formatTimeDifference(notification['timestamp']?.toString() ?? ''),
                         style: const TextStyle(
                           color: Color(0xFF8C8885),
                           fontSize: 12,
@@ -208,61 +339,76 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _NotificationsSliverAppBarDelegate(
-                expandedHeight: 184,
-                isScrolled: _isScrolled,
-                onBackPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const DashboardPage(),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 48)),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    notifications.isEmpty
-                        ? const Center(
-                          child: Text(
-                            'No notifications available',
-                            style: TextStyle(
-                              color: Color(0xFF8C8885),
-                              fontSize: 16,
-                              fontFamily: 'Inter Display',
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        )
-                        : ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: notifications.length,
-                          separatorBuilder:
-                              (context, index) => const SizedBox(height: 16),
-                          itemBuilder:
-                              (context, index) =>
-                                  buildNotificationTile(notifications[index]),
-                        ),
-                    const SizedBox(height: 32),
-                  ],
+      body: Stack(
+        children: [
+          SafeArea(
+            child: RefreshIndicator(
+              onRefresh: _loadNotifications,
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _NotificationsSliverAppBarDelegate(
+                    expandedHeight: 184,
+                    isScrolled: _isScrolled,
+                    onBackPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => const DashboardPage()),
+                      );
+                    },
+                  ),
                 ),
+                const SliverToBoxAdapter(child: SizedBox(height: 48)),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        notifications.isEmpty
+                            ? const Center(
+                                child: Text(
+                                  'No notifications available',
+                                  style: TextStyle(
+                                    color: Color(0xFF8C8885),
+                                    fontSize: 16,
+                                    fontFamily: 'Inter Display',
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              )
+                            : ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: notifications.length,
+                                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                                itemBuilder: (context, index) => buildNotificationTile(notifications[index]),
+                              ),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ),
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton(
+              onPressed: _clearNotifications,
+              backgroundColor: Colors.white,
+              child: SvgPicture.asset(
+                'assets/images/Dustbin.svg',
+                width: 24,
+                height: 24,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       bottomNavigationBar: BottomNavBar(
         selectedIndex: 2,
@@ -291,8 +437,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 }
 
-class _NotificationsSliverAppBarDelegate
-    extends SliverPersistentHeaderDelegate {
+class _NotificationsSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   final double expandedHeight;
   final bool isScrolled;
   final VoidCallback onBackPressed;
@@ -311,18 +456,12 @@ class _NotificationsSliverAppBarDelegate
 
   @override
   bool shouldRebuild(covariant _NotificationsSliverAppBarDelegate oldDelegate) {
-    return expandedHeight != oldDelegate.expandedHeight ||
-        isScrolled != oldDelegate.isScrolled;
+    return expandedHeight != oldDelegate.expandedHeight || isScrolled != oldDelegate.isScrolled;
   }
 
   @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    final double visibilityFactor =
-        1.0 - shrinkOffset / (maxExtent - minExtent);
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final double visibilityFactor = 1.0 - shrinkOffset / (maxExtent - minExtent);
     final double visibilityPercentage = visibilityFactor.clamp(0.0, 1.0);
 
     return Container(
@@ -361,7 +500,7 @@ class _NotificationsSliverAppBarDelegate
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Notifications',
+                          'ಅಧಿಸೂಚನೆಗಳು',
                           style: TextStyle(
                             color: Color(0xFF030100),
                             fontSize: 16,
@@ -386,7 +525,7 @@ class _NotificationsSliverAppBarDelegate
               child: const SizedBox(
                 width: 335,
                 child: Text(
-                  'Notifications',
+                  'ಅಧಿಸೂಚನೆಗಳು',
                   style: TextStyle(
                     color: Color(0xFF030100),
                     fontSize: 24,
@@ -406,7 +545,7 @@ class _NotificationsSliverAppBarDelegate
               child: const SizedBox(
                 width: 335,
                 child: Text(
-                  'Stay updated with your assigned grievances and system alerts',
+                  'ನಿಮಗೆ ನಿಯೋಜಿಸಲಾಗಿರುವ ದೂರುಗಳ ಬಗ್ಗೆ ಮಾಹಿತಿ ಹೊಂದಿರಿ',
                   style: TextStyle(
                     color: Color(0xFF8C8885),
                     fontSize: 16,

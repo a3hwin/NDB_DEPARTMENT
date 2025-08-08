@@ -8,34 +8,94 @@ import './baseUrl.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:convert';
-import 'update_page.dart';
+import 'notif.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Background message handler
+// Define the background handler as a top-level function
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  print("Handling background message: ${message.messageId}");
-  await _storeNotification(message);
+  try {
+    await Firebase.initializeApp();
+    print('Background message received: ${message.messageId}');
+
+    final prefs = await SharedPreferences.getInstance();
+    List<String> notifications = prefs.getStringList('notifications') ?? [];
+
+    final notificationData = {
+      'title': message.notification?.title ?? 'New Grievance',
+      'description': message.notification?.body ?? '',
+      'timestamp': DateTime.now().toIso8601String(),
+      'concernId': message.data['concernId']?.toString() ?? '',
+      'action': message.data['action']?.toString() ?? '',
+      'isRead': false,
+      'status': 'Assigned',
+    };
+
+    // Check for duplicates based on concernId and title
+    bool isDuplicate = notifications.any((n) {
+      final existing = Map<String, dynamic>.from(jsonDecode(n));
+      return existing['concernId'] == notificationData['concernId'] &&
+             existing['title'] == notificationData['title'];
+    });
+
+    if (isDuplicate) {
+      print('Duplicate notification detected, skipping storage: ${jsonEncode(notificationData)}');
+      return;
+    }
+
+    print('Storing background notification: ${jsonEncode(notificationData)}');
+    notifications.insert(0, jsonEncode(notificationData));
+    await prefs.setStringList('notifications', notifications);
+    await prefs.setBool('opened_from_notification', true);
+    print('Stored notifications count: ${notifications.length}');
+  } catch (e) {
+    print('Error in background handler: $e');
+  }
 }
 
 // Store notification in SharedPreferences
 Future<void> _storeNotification(RemoteMessage message) async {
-  final prefs = await SharedPreferences.getInstance();
-  List<String> notifications = prefs.getStringList('notifications') ?? [];
-  final notificationData = {
-    'title': message.notification?.title ?? 'No Title',
-    'description': message.notification?.body ?? 'No Body',
-    'timestamp': DateTime.now().toIso8601String(),
-    'concernId': message.data['concernId'] ?? '',
-    'action': message.data['action'] ?? '',
-  };
-  notifications.add(jsonEncode(notificationData));
-  await prefs.setStringList('notifications', notifications);
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> notifications = prefs.getStringList('notifications') ?? [];
+
+    final notificationData = {
+      'title': message.notification?.title ?? 'New Grievance',
+      'description': message.notification?.body ?? '',
+      'timestamp': DateTime.now().toIso8601String(),
+      'concernId': message.data['concernId']?.toString() ?? '',
+      'action': message.data['action']?.toString() ?? '',
+      'isRead': false,
+      'status': 'Assigned',
+    };
+
+    // Check for duplicates based on concernId and title
+    bool isDuplicate = notifications.any((n) {
+      final existing = Map<String, dynamic>.from(jsonDecode(n));
+      return existing['concernId'] == notificationData['concernId'] &&
+             existing['title'] == notificationData['title'];
+    });
+
+    if (isDuplicate) {
+      print('Duplicate notification detected, skipping storage: ${jsonEncode(notificationData)}');
+      return;
+    }
+
+    print('Storing foreground notification: ${jsonEncode(notificationData)}');
+    notifications.insert(0, jsonEncode(notificationData));
+    await prefs.setStringList('notifications', notifications);
+    await prefs.setBool('opened_from_notification', true);
+    print('Stored notifications count: ${notifications.length}');
+  } catch (e) {
+    print('Error storing notification: $e');
+  }
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  // Register the background handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   // Handle FCM token refresh
@@ -93,8 +153,7 @@ class SplashScreen extends StatefulWidget {
   _SplashScreenState createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
   final _storage = const FlutterSecureStorage();
@@ -102,7 +161,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
-    _setupFcmHandlers(context);
+    _setupFcmHandlers();
     _controller = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
@@ -112,16 +171,18 @@ class _SplashScreenState extends State<SplashScreen>
     _checkTokenAndNavigate();
   }
 
-  void _setupFcmHandlers(BuildContext context) async {
+  void _setupFcmHandlers() async {
+    // Request notification permissions
     await FirebaseMessaging.instance.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
 
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    // Handle foreground messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       print("Foreground message received: ${message.notification?.title}");
-      _storeNotification(message);
+      await _storeNotification(message);
       if (message.notification != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -137,68 +198,44 @@ class _SplashScreenState extends State<SplashScreen>
       }
     });
 
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    // Handle notification taps when app is in background
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
       print("Notification opened: ${message.data}");
-      _onNotificationTap(message, context);
+      await _storeNotification(message); // Store notification when opened
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('opened_from_notification', true);
+      if (mounted) {
+        _onNotificationTap(message, context);
+      }
     });
 
-    RemoteMessage? initialMessage =
-        await FirebaseMessaging.instance.getInitialMessage();
+    // Handle notifications when app is launched from terminated state
+    RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) {
       print("Initial message: ${initialMessage.data}");
-      _onNotificationTap(initialMessage, context);
+      await _storeNotification(initialMessage); // Store initial notification
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('opened_from_notification', true);
+      if (mounted) {
+        _onNotificationTap(initialMessage, context);
+      }
     }
   }
 
   void _onNotificationTap(RemoteMessage message, BuildContext context) async {
     if (message.data['concernId'] != null) {
-      final concernId = int.tryParse(message.data['concernId'] ?? '');
-      if (concernId == null) return;
-      final token = await _storage.read(key: 'authToken');
-      if (token == null) return;
-
-      final url = '$baseUrl/api/app/department/display-all-concerns/$token';
-      try {
-        final response = await http.get(
-          Uri.parse(url),
-          headers: {'Content-Type': 'application/json'},
-        );
-        if (response.statusCode == 200) {
-          final List<dynamic> concerns = jsonDecode(response.body);
-          final concern = concerns.firstWhere(
-            (c) => c['id'] == concernId,
-            orElse: () => null,
-          );
-          if (concern != null && mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder:
-                    (context) =>
-                        UpdatePage(data: Map<String, dynamic>.from(concern)),
-              ),
-            );
-          } else if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Grievance not found')),
-            );
-          }
-        } else if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Unable to fetch grievances')),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error fetching details: $e')));
-        }
-      }
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const NotificationsPage()),
+        (route) => false,
+      );
     }
   }
 
   Future<void> _checkTokenAndNavigate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final openedFromNotification = prefs.getBool('opened_from_notification') ?? false;
+    
     final minSplashFuture = Future.delayed(const Duration(seconds: 2));
     final token = await _storage.read(key: 'authToken');
 
@@ -213,15 +250,30 @@ class _SplashScreenState extends State<SplashScreen>
     } else {
       final isValid = await _verifyToken(token);
       await minSplashFuture;
-      if (isValid && mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const DashboardPage()),
-        );
+      
+      if (!isValid) {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+          );
+        }
+        return;
+      }
+
+      // Clear the notification flag after navigating
+      if (openedFromNotification) {
+        await prefs.setBool('opened_from_notification', false);
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const NotificationsPage()),
+          );
+        }
       } else if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const LoginPage()),
+          MaterialPageRoute(builder: (context) => const DashboardPage()),
         );
       }
     }
@@ -285,7 +337,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               const SizedBox(height: 20, width: 274),
               const Text(
-                'NAVADODDBALLAPURA\nGRIEVANCE DESK',
+                'ನವದೊಡ್ಡಬಳ್ಳಾಪುರ',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 24,
@@ -297,7 +349,19 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               const SizedBox(height: 10, width: 274),
               const Text(
-                'Serving Citizens • Resolving Issues',
+                'ದೂರುಗಳ ಸ್ವೀಕೃತಿ ಕೇಂದ್ರ',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontFamily: 'Inter Display',
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                  height: 1.33,
+                ),
+              ),
+              const SizedBox(height: 10, width: 274),
+              const Text(
+                'ನಾಗರಿಕರಿಗೆ ಸೇವೆ • ಸಮಸ್ಯೆಗಳಿಗೆ ಪರಿಹಾರ',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,

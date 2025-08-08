@@ -471,7 +471,7 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
               controller: _searchController,
               onChanged: (value) => setState(() {}),
               decoration: const InputDecoration(
-                hintText: 'Search grievances by ID, Title or area...',
+                hintText: 'ಐಡಿ, ಟೈಟಲ್‌ ಅಥವಾ ಸ್ಥಳದ ಮೂಲಕ ದೂರುಗಳನ್ನು ಹುಡುಕಿ',
                 hintStyle: TextStyle(
                   color: Color(0xFFC4C2C0),
                   fontSize: 16,
@@ -627,7 +627,7 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _GrievancesSliverAppBarDelegate(
-                  expandedHeight: 290,
+                  expandedHeight: 310,
                   isScrolled: _isScrolled,
                   isSearchBarVisible: _isSearchBarVisible,
                   toggleSearchBar: _toggleSearchBar,
@@ -825,7 +825,7 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Grievances',
+                          'ದೂರುಗಳು',
                           style: TextStyle(
                             color: Color(0xFF030100),
                             fontSize: 16,
@@ -868,7 +868,7 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                 child: const SizedBox(
                   width: 335,
                   child: Text(
-                    'Grievances',
+                    'ದೂರುಗಳು',
                     style: TextStyle(
                       color: Color(0xFF030100),
                       fontSize: 24,
@@ -892,7 +892,7 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                 child: const SizedBox(
                   width: 335,
                   child: Text(
-                    'Manage, resolve and respond to citizen concerns',
+                    'ನಾಗರಿಕರ ಸಮಸ್ಯೆಗಳನ್ನು ನಿರ್ವಹಿಸಿ, ಪರಿಹರಿಸಿ ಮತ್ತು ಪ್ರತಿಕ್ರಿಯಿಸಿ.  \n   ',
                     style: TextStyle(
                       color: Color(0xFF8C8885),
                       fontSize: 16,
@@ -908,7 +908,7 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
           Positioned(
             left: 20,
             right: 20,
-            top: 164,
+            top: 188,
             child: AnimatedOpacity(
               opacity: visibilityPercentage,
               duration: const Duration(milliseconds: 300),
@@ -919,7 +919,7 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
             ),
           ),
           if (isSearchBarVisible && isCollapsed)
-            Positioned(left: 20, right: 20, top: 66, child: searchBarWidget),
+            Positioned(left: 20, right: 20, top: 70, child: searchBarWidget),
           Positioned(
             left: 0,
             right: 0,

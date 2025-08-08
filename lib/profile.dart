@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'bottomNavBar.dart';
 import 'home_page.dart';
 import 'grievancesPage.dart';
@@ -20,6 +22,68 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isCallUsExpanded = false;
   bool _isSupportEmailExpanded = false;
   final _storage = const FlutterSecureStorage();
+  String headOfDepartment = 'RIHAN'; // Default value
+  String departmentName = 'Department Of Roads'; // Default value
+  String departmentEmail = 'rihan@gmail.com'; // Default value
+  bool isLoading = true;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDepartmentDetails();
+  }
+
+  Future<void> _fetchDepartmentDetails() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final String? token = await _storage.read(key: 'authToken');
+      if (token == null || token.isEmpty) {
+        setState(() {
+          errorMessage = 'No authentication token found';
+          isLoading = false;
+        });
+        return;
+      }
+
+      final url = Uri.parse(
+        'https://ndb-apis-69em6.ondigitalocean.app/api/app/department/get-department-details/$token',
+      );
+      final response = await http.get(url, headers: {'Content-Type': 'application/json'});
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['errFlag'] == 0) {
+          final Map<String, dynamic> department = jsonResponse['data'];
+          setState(() {
+            headOfDepartment = department['headOfDepartment'] ?? 'RIHAN';
+            departmentName = department['departmentName'] ?? 'Department Of Roads';
+            departmentEmail = department['departmentEmail'] ?? 'rihan@gmail.com';
+            isLoading = false;
+          });
+        } else {
+          setState(() {
+            errorMessage = 'Failed to load department details: ${jsonResponse['message']}';
+            isLoading = false;
+          });
+        }
+      } else {
+        setState(() {
+          errorMessage = 'API Error: Status Code ${response.statusCode}';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Error fetching department details: $e';
+        isLoading = false;
+      });
+    }
+  }
 
   Future<void> _logout() async {
     try {
@@ -52,34 +116,38 @@ class _ProfilePageState extends State<ProfilePage> {
                 decoration: const BoxDecoration(color: Color(0xFF612C01)),
                 child: Stack(
                   children: [
-                    const Positioned(
+                    Positioned(
                       left: 20,
                       top: 112,
-                      child: Text(
-                        'RIHAN',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontFamily: 'Inter Display',
-                          fontWeight: FontWeight.w600,
-                          height: 1.33,
-                          letterSpacing: -0.96,
-                        ),
-                      ),
+                      child: isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                              headOfDepartment,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontFamily: 'Inter Display',
+                                fontWeight: FontWeight.w600,
+                                height: 1.33,
+                                letterSpacing: -0.96,
+                              ),
+                            ),
                     ),
-                    const Positioned(
+                    Positioned(
                       left: 20,
                       top: 148,
-                      child: Text(
-                        'Department Of Roads • rihan@gmail.com',
-                        style: TextStyle(
-                          color: Color(0xFFC4C2C0),
-                          fontSize: 12,
-                          fontFamily: 'Inter Display',
-                          fontWeight: FontWeight.w400,
-                          height: 1.67,
-                        ),
-                      ),
+                      child: isLoading
+                          ? const SizedBox.shrink()
+                          : Text(
+                              '$departmentName • $departmentEmail',
+                              style: const TextStyle(
+                                color: Color(0xFFC4C2C0),
+                                fontSize: 12,
+                                fontFamily: 'Inter Display',
+                                fontWeight: FontWeight.w400,
+                                height: 1.67,
+                              ),
+                            ),
                     ),
                     Positioned(
                       right: 0,
@@ -97,6 +165,20 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                     ),
+                    if (errorMessage != null)
+                      Positioned(
+                        left: 20,
+                        top: 170,
+                        child: Text(
+                          errorMessage!,
+                          style: const TextStyle(
+                            color: Colors.redAccent,
+                            fontSize: 12,
+                            fontFamily: 'Inter Display',
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -106,8 +188,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Column(
                   children: [
                     buildNonExpandableOption(
-                      'Edit profile',
-                      'Update your information',
+                      'ಪ್ರೋಫೈಲ್‌ ತಿದ್ದುಪಡಿ',
+                      'ನಿಮ್ಮ ಮಾಹಿತಿಯನ್ನು ನವೀಕರಿಸಿ',
                       () {
                         Navigator.push(
                           context,
@@ -118,8 +200,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                     ),
                     buildExpandableOption(
-                      'Get in Touch',
-                      'Reach us via call or email',
+                      'ನಮ್ಮೊಂದಿಗೆ ಸಂಪರ್ಕದಲ್ಲಿರಿ',
+                      'ಕರೆ ಅಥವಾ ಇಮೇಲ್‌ ಮೂಲಕ ನಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸಿ',
                       _isGetInTouchExpanded,
                       () {
                         setState(() {
@@ -131,7 +213,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       buildCallUsSection(),
                       buildSupportEmailSection(),
                     ],
-                    buildNonExpandableOption('Logout', 'Sign out securely', () {
+                    buildNonExpandableOption('ಲಾಗೌಟ್‌', 'ಸುರಕ್ಷಿತವಾಗಿ ಸೈನ್‌ ಔಟ್‌ ಆಗಿ', () {
                       _logout();
                     }),
                   ],

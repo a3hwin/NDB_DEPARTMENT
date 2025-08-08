@@ -55,7 +55,7 @@ class _DashboardSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
             left: 20,
             top: titleTopPosition,
             child: const Text(
-              'Dashboard',
+              'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w600,
@@ -72,7 +72,7 @@ class _DashboardSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
               opacity: visibilityPercentage,
               duration: const Duration(milliseconds: 300),
               child: const Text(
-                'Welcome Admin. Here’s what’s happening today',
+                'ಅಡ್ಮಿನ್‌ ಅವರಿಗೆ ಸ್ವಾಗತ,  ಇಂದು ಏನಾಗುತ್ತಿದೆ ಎಂಬುದು ಇಲ್ಲಿದೆ.',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
@@ -582,7 +582,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Text(
-                                      'TOTAL GRIEVANCES RECEIVED',
+                                      'ಒಟ್ಟೂ ಸ್ವೀಕೃತವಾದ \nದೂರುಗಳು',
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w400,
@@ -621,7 +621,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Text(
-                                      'TOTAL GRIEVANCES RESOLVED',
+                                      'ಒಟ್ಟೂ ಪರಿಹರಿಸಲಾದ ದೂರುಗಳು',
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w400,
@@ -663,7 +663,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'Recent Activities',
+                            'ಇತ್ತೀಚಿನ ಚಟುವಟಿಕೆಗಳು',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
@@ -683,7 +683,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               );
                             },
                             child: const Text(
-                              'View All',
+                              'ಎಲ್ಲವನ್ನೂ ತೋರಿಸಿ',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
