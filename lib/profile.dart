@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart'; // Add this import
 import 'dart:convert';
 import 'bottomNavBar.dart';
 import 'home_page.dart';
@@ -101,6 +102,18 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  // Function to initiate a phone call
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+    if (await canLaunchUrl(phoneUri)) {
+      await launchUrl(phoneUri);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not launch phone dialer')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -188,8 +201,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Column(
                   children: [
                     buildNonExpandableOption(
-                      'ಪ್ರೋಫೈಲ್‌ ತಿದ್ದುಪಡಿ',
-                      'ನಿಮ್ಮ ಮಾಹಿತಿಯನ್ನು ನವೀಕರಿಸಿ',
+                      'Edit Profile',
+                      'Update your information',
                       () {
                         Navigator.push(
                           context,
@@ -200,8 +213,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                     ),
                     buildExpandableOption(
-                      'ನಮ್ಮೊಂದಿಗೆ ಸಂಪರ್ಕದಲ್ಲಿರಿ',
-                      'ಕರೆ ಅಥವಾ ಇಮೇಲ್‌ ಮೂಲಕ ನಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸಿ',
+                      'Get in Touch',
+                      'Reach us via Call or Email',
                       _isGetInTouchExpanded,
                       () {
                         setState(() {
@@ -213,7 +226,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       buildCallUsSection(),
                       buildSupportEmailSection(),
                     ],
-                    buildNonExpandableOption('ಲಾಗೌಟ್‌', 'ಸುರಕ್ಷಿತವಾಗಿ ಸೈನ್‌ ಔಟ್‌ ಆಗಿ', () {
+                    buildNonExpandableOption('Log‌out', 'Sign out Securely', () {
                       _logout();
                     }),
                   ],
@@ -436,25 +449,28 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: ShapeDecoration(
-                  color: const Color(0xFFD96C07),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              GestureDetector(
+                onTap: () => _makePhoneCall('9916195222'), // Trigger phone call
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
                   ),
-                ),
-                child: const Text(
-                  '080 23456789',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontFamily: 'Inter Display',
-                    fontWeight: FontWeight.w500,
-                    height: 1.67,
+                  decoration: ShapeDecoration(
+                    color: const Color(0xFFD96C07),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    '9916195222',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontFamily: 'Inter Display',
+                      fontWeight: FontWeight.w500,
+                      height: 1.67,
+                    ),
                   ),
                 ),
               ),

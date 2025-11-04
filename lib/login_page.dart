@@ -282,7 +282,7 @@ class _LoginPageState extends State<LoginPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: const [
                                 Text(
-                                  'ನವದೊಡ್ಡಬಳ್ಳಾಪುರ',
+                                  'Navadoddballapura',
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontFamily: 'Inter Display',
@@ -293,7 +293,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                                 SizedBox(height: 5),
                                 Text(
-                                  'ನಾಗರಿಕರಿಗೆ ಸೇವೆ • ಸಮಸ್ಯೆಗಳಿಗೆ ಪರಿಹಾರ',
+                                  'Serving Citizens • Resolving Issues',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontStyle: FontStyle.italic,
@@ -315,7 +315,7 @@ class _LoginPageState extends State<LoginPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              "ಈಗಲೇ ಲಾಗಿನ್‌ ಆಗಿ",
+                              "Lets Get You Logged In!",
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w600,
@@ -326,7 +326,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 10),
                             const Text(
-                              'ನಾಗರಿಕರ ಕುಂದುಕೊರತೆಗಳನ್ನು ಪರಿಹರಿಸಲು / ಟ್ರ್ಯಾಕ್‌ ಮಾಡಲು ನಿಮ್ಮ ಅಧಿಕೃತ ಕ್ರೆಡೆನ್ಶಿಲ್ಸ್‌ ಬಳಸಿ ಲಾಗಿನ್‌ ಮಾಡಿ',
+                              'Login with your official credentials to manage, \n track, and resolve citizen grievances seamlessly',
                               textAlign: TextAlign.left,
                               style: TextStyle(
                                 fontSize: 16,
@@ -338,7 +338,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 30),
                             const Text(
-                              'ಮೊಬೈಲ್‌ ಸಂಖ್ಯೆ',
+                              'Mobile Number',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF030100),
@@ -351,7 +351,7 @@ class _LoginPageState extends State<LoginPage> {
                             TextField(
                               controller: _mobileController,
                               decoration: InputDecoration(
-                                hintText: 'ನಿಮ್ಮ 10-digit ಮೊಬೈಲ್‌ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ',
+                                hintText: 'Enter your 10 digit mobile number',
                                 hintStyle: const TextStyle(
                                   color: Color(0xFFC4C2C0),
                                   fontSize: 16,
@@ -369,7 +369,7 @@ class _LoginPageState extends State<LoginPage> {
                             const SizedBox(height: 20),
                             if (_otpSent) ...[
                               const Text(
-                                'ಒಟಿಪಿ (6 digits)',
+                                'OTP (6 digits)',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Color(0xFF030100),
@@ -382,7 +382,7 @@ class _LoginPageState extends State<LoginPage> {
                               TextField(
                                 controller: _otpController,
                                 decoration: const InputDecoration(
-                                  hintText: 'ಸ್ವೀಕರಿಸಿದ 6 digit ಒಟಿಪಿ ನಮೂದಿಸಿ',
+                                  hintText: 'Enter the 6 digit OTP received',
                                   hintStyle: TextStyle(
                                     color: Color(0xFFC4C2C0),
                                     fontSize: 16,
@@ -439,7 +439,7 @@ class _LoginPageState extends State<LoginPage> {
                                 color: Colors.white,
                               )
                               : Text(
-                                _otpSent ? 'ಒಟಿಪಿ ದೃಢೀಕರಿಸಿ' : 'ಒಟಿಪಿ ಕಳುಹಿಸಿ',
+                                _otpSent ? 'Verify OTP' : 'Send OTP',
                                 style: TextStyle(
                                   fontSize: 16,
                                   color:

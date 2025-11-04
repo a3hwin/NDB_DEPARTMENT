@@ -525,7 +525,7 @@ class _NotificationsSliverAppBarDelegate extends SliverPersistentHeaderDelegate 
               child: const SizedBox(
                 width: 335,
                 child: Text(
-                  'ಅಧಿಸೂಚನೆಗಳು',
+                  'Notifications',
                   style: TextStyle(
                     color: Color(0xFF030100),
                     fontSize: 24,
@@ -545,7 +545,7 @@ class _NotificationsSliverAppBarDelegate extends SliverPersistentHeaderDelegate 
               child: const SizedBox(
                 width: 335,
                 child: Text(
-                  'ನಿಮಗೆ ನಿಯೋಜಿಸಲಾಗಿರುವ ದೂರುಗಳ ಬಗ್ಗೆ ಮಾಹಿತಿ ಹೊಂದಿರಿ',
+                  'Stay update with your assigned grievances\nand system alerts',
                   style: TextStyle(
                     color: Color(0xFF8C8885),
                     fontSize: 16,

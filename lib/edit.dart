@@ -137,7 +137,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'ಇಲಾಖೆಯ ಹೆಸರು',
+                          'Name',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -165,7 +165,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'ಇಲಾಖೆಯ ಕೋಡ್‌',
+                          'Department Code',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -193,7 +193,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'ಇಲಾಖೆಯ ಮುಖ್ಯಸ್ಥರು',
+                          'Head Name',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -282,7 +282,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'ಇಮೇಲ್‌ ವಿಳಾಸ',
+                          'Email Address',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -369,7 +369,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'ಮೊಬೈಲ್‌ ಸಂಖ್ಯೆ',
+                          'Mobile Number',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -456,7 +456,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'ವಾರ್ಡ್‌ ಸಂಖ್ಯೆ',
+                          'Ward Number',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF030100),
@@ -526,7 +526,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                   child: Center(
                     child: Text(
-                      'ಉಳಿಸಿ',
+                      'Save',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white,
@@ -624,7 +624,7 @@ class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'ಅಕೌಂಟ್‌ ಮಾಹಿತಿ ತಿದ್ದುಪಡಿ',
+                          'Edit Account Details',
                           style: TextStyle(
                             color: Color(0xFF030100),
                             fontSize: 16,
@@ -674,7 +674,7 @@ class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                 child: SizedBox(
                   width: 335,
                   child: Text(
-                    'ಅಕೌಂಟ್‌ ಮಾಹಿತಿ ತಿದ್ದುಪಡಿ',
+                    'Edit Account Details',
                     style: TextStyle(
                       color: const Color(0xFF030100),
                       fontSize: titleFontSize,
@@ -698,7 +698,7 @@ class _EditProfileSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                 child: const SizedBox(
                   width: 335,
                   child: Text(
-                    'ನಿಮ್ಮ ಮಾಹಿತಿಯನ್ನು ಪರಿಷ್ಕರಿಸಿ',
+                    'Update your information',
                     style: TextStyle(
                       color: Color(0xFF8C8885),
                       fontSize: 16,

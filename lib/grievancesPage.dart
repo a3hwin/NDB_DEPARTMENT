@@ -471,7 +471,7 @@ class _GrievancesScreenState extends State<GrievancesScreen> {
               controller: _searchController,
               onChanged: (value) => setState(() {}),
               decoration: const InputDecoration(
-                hintText: 'ಐಡಿ, ಟೈಟಲ್‌ ಅಥವಾ ಸ್ಥಳದ ಮೂಲಕ ದೂರುಗಳನ್ನು ಹುಡುಕಿ',
+                hintText: 'Search Grievances by ID, Title, area...',
                 hintStyle: TextStyle(
                   color: Color(0xFFC4C2C0),
                   fontSize: 16,
@@ -825,7 +825,7 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'ದೂರುಗಳು',
+                          'Grievances',
                           style: TextStyle(
                             color: Color(0xFF030100),
                             fontSize: 16,
@@ -868,7 +868,7 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                 child: const SizedBox(
                   width: 335,
                   child: Text(
-                    'ದೂರುಗಳು',
+                    'Grievances',
                     style: TextStyle(
                       color: Color(0xFF030100),
                       fontSize: 24,
@@ -892,7 +892,7 @@ class _GrievancesSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                 child: const SizedBox(
                   width: 335,
                   child: Text(
-                    'ನಾಗರಿಕರ ಸಮಸ್ಯೆಗಳನ್ನು ನಿರ್ವಹಿಸಿ, ಪರಿಹರಿಸಿ ಮತ್ತು ಪ್ರತಿಕ್ರಿಯಿಸಿ.  \n   ',
+                    'Manage, Resolve an respond to citizen\nconcerns',
                     style: TextStyle(
                       color: Color(0xFF8C8885),
                       fontSize: 16,

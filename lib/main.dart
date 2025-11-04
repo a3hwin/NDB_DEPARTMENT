@@ -337,7 +337,19 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               ),
               const SizedBox(height: 20, width: 274),
               const Text(
-                'ನವದೊಡ್ಡಬಳ್ಳಾಪುರ',
+                'Navadoddballapura',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontFamily: 'Inter Display',
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  height: 1.33,
+                ),
+              ),
+              const SizedBox(height: 5, width: 274),
+              const Text(
+                'Grievance Desk',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 24,
@@ -349,19 +361,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               ),
               const SizedBox(height: 10, width: 274),
               const Text(
-                'ದೂರುಗಳ ಸ್ವೀಕೃತಿ ಕೇಂದ್ರ',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontFamily: 'Inter Display',
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                  height: 1.33,
-                ),
-              ),
-              const SizedBox(height: 10, width: 274),
-              const Text(
-                'ನಾಗರಿಕರಿಗೆ ಸೇವೆ • ಸಮಸ್ಯೆಗಳಿಗೆ ಪರಿಹಾರ',
+                'Serving Citizens • Resolving Grievances',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,

@@ -723,7 +723,7 @@ class _UpdatePageState extends State<  UpdatePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'ದೂರಿನ ವಿವರ',
+                        'Grievance Details',
                         style: TextStyle(
                           color: Color(0xFF030100),
                           fontSize: 16,
@@ -761,7 +761,7 @@ class _UpdatePageState extends State<  UpdatePage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'ರೆಫರೆನ್ಸ್‌ ಐಡಿ',
+                                  'Reference ID',
                                   style: TextStyle(
                                     color: Color(0xFF8C8885),
                                     fontSize: 12,
@@ -814,7 +814,7 @@ class _UpdatePageState extends State<  UpdatePage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'ಸ್ಥಳ',
+                                  'Location',
                                   style: TextStyle(
                                     color: Color(0xFF8C8885),
                                     fontSize: 12,
@@ -869,7 +869,7 @@ class _UpdatePageState extends State<  UpdatePage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'ಸ್ವೀಕರಿಸಲ್ಪಟ್ಟ ದಿನಾಂಕ',
+                                  'Submitted On',
                                   style: TextStyle(
                                     color: Color(0xFF8C8885),
                                     fontSize: 12,
@@ -922,7 +922,7 @@ class _UpdatePageState extends State<  UpdatePage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'ಮೊಬೈಲ್  ಸಂಖ್ಯೆ',
+                                  'Mobile Number',
                                   style: TextStyle(
                                     color: Color(0xFF8C8885),
                                     fontSize: 12,
@@ -975,7 +975,7 @@ class _UpdatePageState extends State<  UpdatePage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'ಇಮೇಲ್‌ ವಿಳಾಸ',
+                                  'Email Address',
                                   style: TextStyle(
                                     color: Color(0xFF8C8885),
                                     fontSize: 12,
@@ -1028,7 +1028,7 @@ class _UpdatePageState extends State<  UpdatePage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'ದೂರುದಾರರ ಹೆಸರು',
+                                  'Submitted By',
                                   style: TextStyle(
                                     color: Color(0xFF8C8885),
                                     fontSize: 12,
@@ -1060,7 +1060,7 @@ class _UpdatePageState extends State<  UpdatePage> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 29),
                 child: const Text(
-                  'ವಿವರ',
+                  'Description',
                   style: TextStyle(
                     color: Color(0xFF030100),
                     fontSize: 16,
@@ -1091,7 +1091,7 @@ class _UpdatePageState extends State<  UpdatePage> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 29),
                 child: const Text(
-                  'ದೂರಿನ ಕುರಿತಾದ ಫೋಟೋ',
+                  'Images Of the Concern',
                   style: TextStyle(
                     color: Color(0xFF030100),
                     fontSize: 16,
@@ -1106,7 +1106,7 @@ class _UpdatePageState extends State<  UpdatePage> {
                 child: const SizedBox(
                   width: 335,
                   child: Text(
-                    'ಹೆಚ್ಚಿನ ಮಾಹಿತಿಗಾಗಿ ದೂರುದಾರರಿಂದ ಸ್ವೀಕರಿಸಲ್ಪಟ್ಟ ಪೋಟೋ',
+                    'Photos shared by the citizen for better clarity',
                     style: TextStyle(
                       color: Color(0xFF8C8885),
                       fontSize: 14,
@@ -1248,7 +1248,7 @@ class _UpdatePageState extends State<  UpdatePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'ಚಟುವಟಿಕೆ & ಕಾಮೆಂಟ್‌ಗಳು',
+                        'Activity & Comments',
                         style: TextStyle(
                           color: Color(0xFF030100),
                           fontSize: 16,
@@ -1277,7 +1277,7 @@ class _UpdatePageState extends State<  UpdatePage> {
                               maxLines: 5,
                               decoration: const InputDecoration(
                                 hintText:
-                                    'ಆಂತರಿಕ ಟಿಪ್ಪಣಿ, ಕಾಮೆಂಟ್‌ ಅಥವಾ ದೂರಿನ ಕುರಿತಾದ ಮಾಹಿತಿ ಸೇರಿಸಿ',
+                                    'Add a comment, internal note, update on the concern...',
                                 hintStyle: TextStyle(
                                   color: Color(0xFFC4C2C0),
                                   fontSize: 16,
@@ -1302,7 +1302,7 @@ class _UpdatePageState extends State<  UpdatePage> {
                                   minimumSize: const Size(double.infinity, 40),
                                 ),
                                 child: const Text(
-                                  'ಕಾಮೆಂಟ್‌ ಸೇರಿಸಿ',
+                                  'Add Comment',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
@@ -1428,7 +1428,7 @@ class _UpdatePageState extends State<  UpdatePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'ಸ್ಥಳ',
+                        'Location',
                         style: TextStyle(
                           color: Color(0xFF030100),
                           fontSize: 16,

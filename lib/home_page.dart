@@ -55,7 +55,7 @@ class _DashboardSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
             left: 20,
             top: titleTopPosition,
             child: const Text(
-              'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌',
+              'Dashboard',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w600,
@@ -72,7 +72,7 @@ class _DashboardSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
               opacity: visibilityPercentage,
               duration: const Duration(milliseconds: 300),
               child: const Text(
-                'ಅಡ್ಮಿನ್‌ ಅವರಿಗೆ ಸ್ವಾಗತ,  ಇಂದು ಏನಾಗುತ್ತಿದೆ ಎಂಬುದು ಇಲ್ಲಿದೆ.',
+                'Welcome Admin, here is what’s happening today.',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
@@ -582,7 +582,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Text(
-                                      'ಒಟ್ಟೂ ಸ್ವೀಕೃತವಾದ \nದೂರುಗಳು',
+                                      'Total Grievances \nRecieved',
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w400,
@@ -599,7 +599,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                         fontSize: 20,
                                         fontWeight: FontWeight.w600,
                                         fontFamily: 'Inter Display',
-                                        color: Color(0xFF036B1E),
+                                        color: Color(0xFFD97706),
                                         height: 1.2,
                                       ),
                                       textAlign: TextAlign.center,
@@ -621,7 +621,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Text(
-                                      'ಒಟ್ಟೂ ಪರಿಹರಿಸಲಾದ ದೂರುಗಳು',
+                                      'Total Grievances \nResolved',
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w400,
@@ -643,7 +643,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                         fontSize: 20,
                                         fontWeight: FontWeight.w600,
                                         fontFamily: 'Inter Display',
-                                        color: Color(0xFFD97706),
+                                        color: Color(0xFF036B1E),
                                         height: 1.2,
                                       ),
                                       textAlign: TextAlign.center,
@@ -663,7 +663,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'ಇತ್ತೀಚಿನ ಚಟುವಟಿಕೆಗಳು',
+                            'Recent Grievances',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
@@ -683,7 +683,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               );
                             },
                             child: const Text(
-                              'ಎಲ್ಲವನ್ನೂ ತೋರಿಸಿ',
+                              'View All',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
