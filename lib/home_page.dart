@@ -220,13 +220,13 @@ class _DashboardPageState extends State<DashboardPage> {
   String mapStatus(String apiStatus) {
     switch (apiStatus) {
       case '1':
-        return 'Assigned';
+        return 'On Hold';
       case '2':
         return 'Accepted';
       case '3':
         return 'Resolved';
       default:
-        return 'Assigned';
+        return 'On Hold';
     }
   }
 
@@ -336,7 +336,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     Map<String, Color> getStatusBadgeColors(String status) {
       switch (status) {
-        case 'Assigned':
+        case 'On Hold':
           return {
             'background': const Color(0xFFFFE6E6),
             'text': const Color(0xFFB91C1C),
@@ -521,7 +521,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final dropdowns = [
       DropdownData(
         label: 'Status',
-        options: ['All', 'Assigned', 'Accepted', 'Resolved'],
+        options: ['All', 'On Hold', 'Accepted', 'Resolved'],
       ),
       DropdownData(
         label: 'Date',

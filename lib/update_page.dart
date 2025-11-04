@@ -22,7 +22,7 @@ class UpdatePage extends StatefulWidget {
   _UpdatePageState createState() => _UpdatePageState();
 }
 
-class _UpdatePageState extends State<  UpdatePage> {
+class _UpdatePageState extends State<UpdatePage> {
   String dropdownValue = 'Internal only';
   LatLng? _mapCenter;
   bool _isMapLoading = true;
@@ -218,83 +218,89 @@ class _UpdatePageState extends State<  UpdatePage> {
   }
 
   Future<void> _acceptGrievance() async {
-  if (!await _checkInternetConnection()) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No internet connection')),
-    );
-    return;
-  }
+    if (!await _checkInternetConnection()) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No internet connection')));
+      return;
+    }
 
-  final token = await _storage.read(key: 'authToken');
-  if (token == null || token.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No authentication token found')),
-    );
-    return;
-  }
+    final token = await _storage.read(key: 'authToken');
+    if (token == null || token.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No authentication token found')),
+      );
+      return;
+    }
 
-  print('ID: ${widget.data['id']}, Token: $token');
-  final url =
-      'https://ndb-apis-69em6.ondigitalocean.app/api/app/department/update-concern-status/${widget.data['id']}/2/$token';
-  print('Request URL: $url');
+    print('ID: ${widget.data['id']}, Token: $token');
+    final url =
+        'https://ndb-apis-69em6.ondigitalocean.app/api/app/department/update-concern-status/${widget.data['id']}/2/$token';
+    print('Request URL: $url');
 
-  try {
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
-    );
-    print('API Response Status: ${response.statusCode}');
-    print('API Response Body: ${response.body}');
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+      );
+      print('API Response Status: ${response.statusCode}');
+      print('API Response Body: ${response.body}');
 
-    if (response.statusCode == 200) {
-      final jsonResponse = jsonDecode(response.body);
-      if (jsonResponse['errFlag'] == 0) {
-        setState(() {
-          widget.data['status'] = 'Accepted';
-        });
-        // Remove the notification from SharedPreferences
-        final prefs = await SharedPreferences.getInstance();
-        List<String> notifications = prefs.getStringList('notifications') ?? [];
-        notifications = notifications
-            .map((n) => Map<String, dynamic>.from(jsonDecode(n)))
-            .where((n) => n['concernId'].toString() != widget.data['id'].toString())
-            .map((n) => jsonEncode(n))
-            .toList();
-        await prefs.setStringList('notifications', notifications);
-        print('Removed notification for concernId: ${widget.data['id']}');
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['errFlag'] == 0) {
+          setState(() {
+            widget.data['status'] = 'Accepted';
+          });
+          // Remove the notification from SharedPreferences
+          final prefs = await SharedPreferences.getInstance();
+          List<String> notifications =
+              prefs.getStringList('notifications') ?? [];
+          notifications =
+              notifications
+                  .map((n) => Map<String, dynamic>.from(jsonDecode(n)))
+                  .where(
+                    (n) =>
+                        n['concernId'].toString() !=
+                        widget.data['id'].toString(),
+                  )
+                  .map((n) => jsonEncode(n))
+                  .toList();
+          await prefs.setStringList('notifications', notifications);
+          print('Removed notification for concernId: ${widget.data['id']}');
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Status updated successfully')),
-        );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Status updated successfully')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                jsonResponse['message'] ?? 'Failed to update status',
+              ),
+            ),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              jsonResponse['message'] ?? 'Failed to update status',
-            ),
+            content: Text('Failed to update status: ${response.statusCode}'),
           ),
         );
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update status: ${response.statusCode}'),
-        ),
-      );
+    } catch (e) {
+      print('Error: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error updating status: $e')));
     }
-  } catch (e) {
-    print('Error: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error updating status: $e')),
-    );
   }
-}
 
   Map<String, Color> getStatusBadgeColors(String status) {
     String statusStr = status.toString();
 
     switch (statusStr) {
-      case 'Assigned':
+      case 'On Hold':
         return {
           'background': const Color(0xFFFFE6E6),
           'text': const Color(0xFFB91C1C),
@@ -498,7 +504,7 @@ class _UpdatePageState extends State<  UpdatePage> {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        if (widget.data['status'] == 'Assigned') {
+                        if (widget.data['status'] == 'On Hold') {
                           showDialog(
                             context: context,
                             builder:
@@ -546,7 +552,7 @@ class _UpdatePageState extends State<  UpdatePage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              widget.data['status'] == 'Assigned'
+                              widget.data['status'] == 'On Hold'
                                   ? 'Accept'
                                   : 'Update status',
                               textAlign: TextAlign.center,
@@ -558,7 +564,7 @@ class _UpdatePageState extends State<  UpdatePage> {
                                 height: 1.50,
                               ),
                             ),
-                            if (widget.data['status'] != 'Assigned') ...[
+                            if (widget.data['status'] != 'On Hold') ...[
                               const SizedBox(width: 8),
                               SvgPicture.asset(
                                 'assets/images/edit_icon.svg',
@@ -1663,7 +1669,7 @@ class _UpdateStatusDialogState extends State<UpdateStatusDialog> {
         selectedStatus = 'Resolved';
         break;
       default:
-        selectedStatus = 'Assigned';
+        selectedStatus = 'On Hold';
     }
   }
 
@@ -1694,8 +1700,10 @@ class _UpdateStatusDialogState extends State<UpdateStatusDialog> {
     }
 
     final concernId = widget.data['id'];
-    int newStatus = selectedStatus == 'Resolved' ? 3 : 
-                    (selectedStatus == 'Accepted' ? 2 : 1);
+    int newStatus =
+        selectedStatus == 'Resolved'
+            ? 3
+            : (selectedStatus == 'Accepted' ? 2 : 1);
 
     setState(() {
       widget.data['concern_status'] = newStatus.toString();
@@ -1909,7 +1917,7 @@ class _UpdateStatusDialogState extends State<UpdateStatusDialog> {
                     ),
                   ),
                   items:
-                      ['Assigned','Accepted', 'Resolved'].map((String value) {
+                      ['On Hold', 'Accepted', 'Resolved'].map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
                           child: Padding(
